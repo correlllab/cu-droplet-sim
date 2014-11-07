@@ -140,6 +140,16 @@ public:
 	 */
 	DS_RESULT GetPhysData(std::vector<ObjectPhysicsData *> *phys, DSim& simulator);
 	
+    /**
+     * \fn DS_RESULT GetPhysWorldObj(btDiscreteDynamicsWorld **dynWorld_p, DSim &simulator);
+     *
+     * \brief Returns the Bullet physics world object of the simulation
+     *
+     * \param [in,out]  dynWorld_p  Reference to a pointer to return the physics world object.
+     * \param [in,out]  simulator   The simulator.
+     */
+    DS_RESULT GetPhysWorldObj(btDiscreteDynamicsWorld **dynWorld_p, DSim &simulator);
+
 	/**
 	 * \fn	DS_RESULT DSimDataLogger::GetCommData(std::vector<DropletCommData *> *comm,
 	 * 		DSim& simulator);

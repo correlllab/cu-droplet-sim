@@ -188,6 +188,19 @@ DS_RESULT DSimDataLogger::GetPhysData (
 	return DS_SUCCESS;
 }
 
+DS_RESULT DSimDataLogger::GetPhysWorldObj(btDiscreteDynamicsWorld **dynWorld_p, DSim &simulator)
+{
+    if ( simulator.simPhysics->dynWorld != NULL )
+        *dynWorld_p = simulator.simPhysics->dynWorld;
+    else
+    {
+        *dynWorld_p = NULL;
+        return DS_WARNING;
+    }
+
+    return DS_SUCCESS;
+}
+
 DS_RESULT DSimDataLogger::GetCommData ( 
     std::vector<DropletCommData *> *comm, 
     DSim& simulator )
