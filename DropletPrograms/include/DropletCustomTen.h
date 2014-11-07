@@ -8,8 +8,6 @@
 #include <DSimDataStructs.h>
 #include <inttypes.h>
 
-#include <stdlib.h>
-
 class DropletCustomTen : public DSimDroplet
 {
 private :

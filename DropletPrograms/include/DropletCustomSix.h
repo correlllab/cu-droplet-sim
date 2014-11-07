@@ -2,13 +2,10 @@
  * 
  */
 #pragma once
-
 #include <DSimDroplet.h>
 #include <DSimGlobals.h>
 #include <DSimDataStructs.h>
 #include <inttypes.h>
-
-#include <stdlib.h>
 
 class DropletCustomSix : public DSimDroplet
 {

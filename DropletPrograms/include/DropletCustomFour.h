@@ -8,8 +8,6 @@
 #include <DSimDataStructs.h>
 #include <inttypes.h>
 
-#include <stdlib.h>
-
 class DropletCustomFour : public DSimDroplet
 {
 private :
@@ -17,7 +15,6 @@ private :
 public :
 	DropletCustomFour(ObjectPhysicsData *objPhysics);
 	~DropletCustomFour(void);
-
 	
 	void DropletInit(void);
 	void DropletMainLoop(void);

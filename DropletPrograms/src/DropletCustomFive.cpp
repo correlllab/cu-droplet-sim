@@ -8,10 +8,8 @@ DropletCustomFive::~DropletCustomFive() { return; }
 
 void DropletCustomFive::DropletInit()
 {
-	
 }
 
 void DropletCustomFive::DropletMainLoop()
 {
-	
 }
