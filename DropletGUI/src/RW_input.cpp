@@ -46,8 +46,6 @@ void RenderWidget::mousePressEvent ( QMouseEvent * event )
 		GLdouble projectionMatrix[16];
 		GLfloat winX, winY;
 
-		glGetDoulbev(GL_MODELVIEW_MATRIX,modelViewMatrix);
-
 		// show tool tip
 		QString toolTipText= QString("mouseStatus.start = %1 : %2").arg(_mouseStatus.startX).arg(_mouseStatus.startY);
 		QToolTip::showText(event->globalPos(),toolTipText);
