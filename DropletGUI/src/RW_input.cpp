@@ -3,7 +3,6 @@
 *
 * \brief	Implements the input handling for the RenderWidget class.
 */
-
 #include "RenderWidget.h"
 
 // handle mouse movement
@@ -26,28 +25,54 @@ void RenderWidget::mouseMoveEvent ( QMouseEvent * event )
 // handle mouse button pressed
 void RenderWidget::mousePressEvent ( QMouseEvent * event )
 {
-
-
-	if (event->buttons().testFlag(Qt::RightButton) || event->buttons().testFlag(Qt::LeftButton))
-	{
-		if (event->buttons().testFlag(Qt::LeftButton))
-		{
-			_mouseStatus.leftButtonHeldDown = true;
-		}
-		else 
-		{
-			_mouseStatus.rightButtonHeldDown = true;
-			_mouseStatus.startX = event->x();
-			_mouseStatus.startY = event->y();
-			_mouseStatus.origHoriz = _camera.rotHoriz;
-			_mouseStatus.origVert = _camera.rotVert;
-			_mouseStatus.origPan = _camera.pan;
-			_mouseStatus.origTilt = _camera.tilt;
-			setCursor(QCursor(Qt::BlankCursor));
-		}
-		
+	if (event->buttons().testFlag(Qt::MiddleButton)) {
+		//no middle mouse button fuctionality;
 	}
-	event->accept();
+
+	if (event->buttons().testFlag(Qt::LeftButton))
+	{
+		_mouseStatus.leftButtonHeldDown = true;
+		_mouseStatus.startX = event->x();
+		_mouseStatus.startY = event->y();
+		setCursor(QCursor(Qt::CrossCursor));
+
+		// see what gets hit
+		btVector3 btFrom(_camera.x,_camera.y,_camera.z);
+		btVector3 btTo(0,0,0);
+		btCollisionWorld::ClosestRayResultCallback res(btFrom,btTo);
+
+		GLint viewport[4];
+		GLdouble modelViewMatrix[16];
+		GLdouble projectionMatrix[16];
+		GLfloat winX, winY;
+
+		glGetDoulbev(GL_MODELVIEW_MATRIX,modelViewMatrix);
+
+		// show tool tip
+		QString toolTipText= QString("mouseStatus.start = %1 : %2").arg(_mouseStatus.startX).arg(_mouseStatus.startY);
+		QToolTip::showText(event->globalPos(),toolTipText);
+
+		event->accept();
+	}
+
+	if (event->buttons().testFlag(Qt::RightButton))
+	{
+		_mouseStatus.rightButtonHeldDown = true;
+		_mouseStatus.startX = event->x();
+		_mouseStatus.startY = event->y();
+		_mouseStatus.origHoriz = _camera.rotHoriz;
+		_mouseStatus.origVert = _camera.rotVert;
+		_mouseStatus.origPan = _camera.pan;
+		_mouseStatus.origTilt = _camera.tilt;
+		setCursor(QCursor(Qt::BlankCursor));
+		event->accept();
+	}
+}
+
+// handle selection of droplet
+void RenderWidget::mouseSelect (int x, int y)
+{
+
 }
 
 // handle releasing the mouse button
@@ -57,13 +82,15 @@ void RenderWidget::mouseReleaseEvent ( QMouseEvent * event )
 	{
 		_mouseStatus.rightButtonHeldDown = false;
 		setCursor(QCursor(Qt::ArrowCursor));
+		event->accept();
 	}
 
 	if (!event->buttons().testFlag(Qt::LeftButton)) 
 	{
 		_mouseStatus.leftButtonHeldDown = false;
+		event->accept();
 	}
-	event->accept();
+	
 }
 
 // event to handle scrolling with scroll wheel
