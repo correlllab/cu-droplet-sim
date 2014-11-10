@@ -20,52 +20,47 @@ void DropletCustomOne::DropletMainLoop()
 
 void DropletCustomOne::get_color_from_id(droplet_id_type id, uint8_t* r, uint8_t* g, uint8_t* b)
 {
-	switch (id) {
-	case 1:
+	switch ((int)id) 
+	{
+	case 33:
 		*r=255;
 		*g=0;
 		*b=0;
 		break;
-	case 2:
+	case 34:
 		*r=0;
 		*g=255;
 		*b=0;
 		break;
-	case 3:
+	case 35:
 		*r=0;
 		*g=0;
 		*b=255;
 		break;
-	case 4:
+	case 36:
 		*r=255;
 		*g=255;
 		*b=0;
 		break;
-	case 5:
+	case 37:
 		*r=255;
 		*g=0;
 		*b=255;
 		break;
-	case 6:
+	case 38:
 		*r=0;
 		*g=255;
 		*b=255;
 		break;
-	case 7:
+	case 39:
 		*r=255;
 		*g=255;
 		*b=255;
-		break;
-	case 8:
-		*r=255;
-		*g=0;
-		*b=128;
 		break;
 	default:
 		*r=0;
 		*g=0;
 		*b=0;
-		break;
 	}
 
 }
