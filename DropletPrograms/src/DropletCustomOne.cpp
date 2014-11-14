@@ -12,6 +12,7 @@ void DropletCustomOne::DropletInit()
 	uint8_t r=0, g=0, b=0;
 	get_color_from_id(my_id, &r, &g, &b);
 	set_rgb_led(r, g, b);
+	
 }
 
 void DropletCustomOne::DropletMainLoop()

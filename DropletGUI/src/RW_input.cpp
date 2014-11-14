@@ -36,15 +36,11 @@ void RenderWidget::mousePressEvent ( QMouseEvent * event )
 		_mouseStatus.startY = event->y();
 		setCursor(QCursor(Qt::CrossCursor));
 
-		// see what gets hit
-		btVector3 btFrom(_camera.x,_camera.y,_camera.z);
-		btVector3 btTo(0,0,0);
-		btCollisionWorld::ClosestRayResultCallback res(btFrom,btTo);
-
-		GLint viewport[4];
-		GLdouble modelViewMatrix[16];
-		GLdouble projectionMatrix[16];
-		GLfloat winX, winY;
+		// check if droplet is selected
+		QMatrix4x4 unprojectMatrix;
+		
+		
+		
 
 		// show tool tip
 		QString toolTipText= QString("mouseStatus.start = %1 : %2").arg(_mouseStatus.startX).arg(_mouseStatus.startY);
