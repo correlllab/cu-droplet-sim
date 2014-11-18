@@ -2,7 +2,7 @@
 droplet_shader droplet
 droplet_projection projdroplet
 droplet_texture dropletTex
-droplet_mesh HQDroplet
+droplet_mesh testDroplet
 
 #wall assets
 wall_shader texture
