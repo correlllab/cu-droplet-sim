@@ -1,5 +1,5 @@
-cu-droplet-sim
-==============
+cu-droplet-sim (README UNDER CONSTRUCTION)
+==========================================
 
 Simulator for the Droplet Swarm Robotics Platform
 
@@ -10,7 +10,6 @@ Table of Contents
 	1. Supported Platforms
 	1. Dependencies
 	1. Build
-	
 1.	Documentation
 1. 	Programming Guide
 1. 	Troubleshooting
