@@ -15,7 +15,7 @@ Table of Contents
 1. 	Programming Guide
 1. 	Troubleshooting
 1. 	Droplet Robot Code
-
+1.	License
 
 Installation and Build Guide
 ----------------------------
@@ -50,3 +50,8 @@ Troubleshooting
 Droplet Robot Code
 ------------------
 If you are looking for the actual robot code for the Droplet Platform is can be found at [this](https://github.com/correlllab/cu-droplet) GitHub Repository: https://github.com/correlllab/cu-droplet
+
+
+License
+-------
+This work is available under a <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" >Creative Commons Attribution-NonCommercial-ShareAlike License. <img src="http://i.creativecommons.org/l/by-nc-sa/3.0/88x31.png" alt="CC License"></a>
