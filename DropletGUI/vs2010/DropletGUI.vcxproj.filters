@@ -183,41 +183,41 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\assets\manifest.txt">
+    <None Include="..\..\Assets\Shaders\CommonVertex.glsl">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\..\Assets\Shaders\DebugFragment.glsl">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\..\Assets\Shaders\DebugVertex.glsl">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\..\Assets\Shaders\DropletCommonVertex.glsl">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\..\Assets\Shaders\DropletFragment.glsl">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\..\Assets\Shaders\DropletTexFragment.glsl">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\..\Assets\Shaders\ProjDropletFragment.glsl">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\..\Assets\Shaders\ProjectorFragment.glsl">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\..\Assets\Shaders\shaders.txt">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\..\Assets\Shaders\SimpleFragment.glsl">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\..\Assets\Shaders\TextureFragment.glsl">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\..\Assets\manifest.txt">
       <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\assets\Shaders\DropletCommonVertex.glsl">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\assets\Shaders\DropletFragment.glsl">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\assets\Shaders\DropletTexFragment.glsl">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\assets\Shaders\ProjDropletFragment.glsl">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\assets\Shaders\ProjectorFragment.glsl">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\assets\Shaders\shaders.txt">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\assets\Shaders\SimpleFragment.glsl">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\assets\Shaders\TextureFragment.glsl">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\assets\Shaders\CommonVertex.glsl">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\assets\Shaders\DebugFragment.glsl">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\assets\Shaders\DebugVertex.glsl">
-      <Filter>Resource Files\Shaders</Filter>
     </None>
   </ItemGroup>
 </Project>

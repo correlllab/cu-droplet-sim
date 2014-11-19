@@ -47,5 +47,6 @@ void main(){
 	
 
 	//White on bottom, dome colored
-	aux_Color = (in_vertexPos.z < 0.58) ? vec4(0.0) : vec4(in_Color.xyz,0.4);
+	//aux_Color = (in_vertexPos.z < 0.58) ? vec4(0.0) : vec4(in_Color.xyz,0.4);
+	aux_Color=in_Color;
 }

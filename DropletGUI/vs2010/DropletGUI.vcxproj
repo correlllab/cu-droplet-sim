@@ -210,18 +210,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\assets\manifest.txt" />
-    <None Include="..\assets\Shaders\CommonVertex.glsl" />
-    <None Include="..\assets\Shaders\DebugFragment.glsl" />
-    <None Include="..\assets\Shaders\DebugVertex.glsl" />
-    <None Include="..\assets\Shaders\DropletCommonVertex.glsl" />
-    <None Include="..\assets\Shaders\DropletFragment.glsl" />
-    <None Include="..\assets\Shaders\DropletTexFragment.glsl" />
-    <None Include="..\assets\Shaders\ProjDropletFragment.glsl" />
-    <None Include="..\assets\Shaders\ProjectorFragment.glsl" />
-    <None Include="..\assets\Shaders\shaders.txt" />
-    <None Include="..\assets\Shaders\SimpleFragment.glsl" />
-    <None Include="..\assets\Shaders\TextureFragment.glsl" />
     <CustomBuild Include="..\include\MainWindow.ui">
       <FileType>Document</FileType>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTDIR)\bin\uic.exe;%(AdditionalInputs)</AdditionalInputs>
@@ -233,6 +221,20 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\GeneratedFiles\ui_%(Filename).h;%(Outputs)</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(QTDIR)\bin\uic.exe" -o ".\GeneratedFiles\ui_%(Filename).h" "%(FullPath)"</Command>
     </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\Assets\manifest.txt" />
+    <None Include="..\..\Assets\Shaders\CommonVertex.glsl" />
+    <None Include="..\..\Assets\Shaders\DebugFragment.glsl" />
+    <None Include="..\..\Assets\Shaders\DebugVertex.glsl" />
+    <None Include="..\..\Assets\Shaders\DropletCommonVertex.glsl" />
+    <None Include="..\..\Assets\Shaders\DropletFragment.glsl" />
+    <None Include="..\..\Assets\Shaders\DropletTexFragment.glsl" />
+    <None Include="..\..\Assets\Shaders\ProjDropletFragment.glsl" />
+    <None Include="..\..\Assets\Shaders\ProjectorFragment.glsl" />
+    <None Include="..\..\Assets\Shaders\shaders.txt" />
+    <None Include="..\..\Assets\Shaders\SimpleFragment.glsl" />
+    <None Include="..\..\Assets\Shaders\TextureFragment.glsl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{2076F437-C2C5-4780-822B-2791F4F4E0FD}</ProjectGuid>

@@ -26,5 +26,6 @@ void main()
 	vec3 vLightWeighting = ambientColor + directionalColor*directionalLightWeighting;
 	vec3 light = 1 - (1 - vLightWeighting * (1-aux_Color.a)) * (1 - aux_Color.xyz*tex_Color.a);
 
-	out_Color = vec4(tex_Color.xyz * light,1.0);
+	//out_Color = vec4(tex_Color.xyz * light,1.0);
+	out_Color = tex_Color;
 }
