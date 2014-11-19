@@ -24,12 +24,12 @@ out vec2 texCoords_0;
 out vec2 texCoords_1;
 out vec3 directionalColor;
 out vec3 ambientColor;
+out float height;
 
 void main(){	
 
 	ambientColor = vec3(0.4);
 	directionalColor = vec3(0.4);
-
 
 	mat4 modelView = in_View * in_Model;
 	vec2 worldCoords = (in_Model * in_vertexPos).xy;
@@ -44,7 +44,8 @@ void main(){
 	//Lighting to be passed into fragment shader.
 
 	gl_Position = in_Projection * (modelView * in_vertexPos);
-	
+
+	height=in_vertexPos.z;
 
 	//White on bottom, dome colored
 	//aux_Color = (in_vertexPos.z < 0.58) ? vec4(0.0) : vec4(in_Color.xyz,0.4);

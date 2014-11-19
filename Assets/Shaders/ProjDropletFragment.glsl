@@ -17,6 +17,7 @@ in vec2 texCoords_0;
 in vec2 texCoords_1;
 in vec3 directionalColor;
 in vec3 ambientColor;
+in float height;
 
 void main()
 {
