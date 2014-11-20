@@ -240,6 +240,7 @@ protected:
 	*/
 
 	void drawDroplets();
+	void drawDroplets_new();
 
 	/**
 	* \fn	void RenderWidget::drawObjects();
@@ -542,6 +543,16 @@ private:
 		unsigned int mode;
 		glm::vec3 lightDir;
 	} _camera;
+
+	/**
+	* \brief	Struct that contains the light source info.
+	*/
+	struct {
+		glm::vec4 position;
+		glm::vec4 ambient;
+		glm::vec4 diffuse;
+		glm::vec4 specular;
+	} _lightSource;
 
 	/**
 	* \brief	Struct that keeps track of mouse status.

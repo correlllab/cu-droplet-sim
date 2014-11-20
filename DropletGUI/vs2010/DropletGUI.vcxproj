@@ -227,6 +227,8 @@
     <None Include="..\..\Assets\Shaders\CommonVertex.glsl" />
     <None Include="..\..\Assets\Shaders\DebugFragment.glsl" />
     <None Include="..\..\Assets\Shaders\DebugVertex.glsl" />
+    <None Include="..\..\Assets\Shaders\dropletFrag.glsl" />
+    <None Include="..\..\Assets\Shaders\dropletVert.glsl" />
     <None Include="..\..\Assets\Shaders\DropletCommonVertex.glsl" />
     <None Include="..\..\Assets\Shaders\DropletFragment.glsl" />
     <None Include="..\..\Assets\Shaders\DropletTexFragment.glsl" />

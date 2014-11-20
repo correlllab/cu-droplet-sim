@@ -21,6 +21,7 @@ RenderWidget::RenderWidget(const QGLFormat& format, QWidget *parent)
 	_hud = true;
 	_drawHelp = false;
 	_hudInfo.paused = false;
+
 	// initialize the camera
 	_camera.x = 0;
 	_camera.y = 0;
@@ -34,6 +35,28 @@ RenderWidget::RenderWidget(const QGLFormat& format, QWidget *parent)
 	_camera.viewMatrix.setToIdentity();
 	_camera.lightDir = glm::vec3(1,1,3);
 	updateCamera();
+
+	// initialize the light
+	_lightSource.position.x = 10.0;
+	_lightSource.position.y = 10.0;
+	_lightSource.position.z = 10.0;
+	_lightSource.position.w = 0.0;
+
+	_lightSource.ambient.x = 0.3; 
+	_lightSource.ambient.y = 0.3;
+	_lightSource.ambient.z = 0.3;
+	_lightSource.ambient.w = 1.0;
+
+	_lightSource.diffuse.x = 1.0;
+	_lightSource.diffuse.y = 1.0;
+	_lightSource.diffuse.z = 1.0;
+	_lightSource.diffuse.w = 1.0;
+
+	_lightSource.specular.x = 0.5;
+	_lightSource.specular.y = 0.5;
+	_lightSource.specular.z = 0.5;
+	_lightSource.specular.w = 1.0;
+
 
 	_timerID = 0;
 	// start out not unpaused
@@ -280,7 +303,7 @@ void RenderWidget::paintGL()
 		}
 
 		//drawArena();
-		drawDroplets();
+		drawDroplets_new();
 		drawObjects();
 
 		if (_arena.projecting && _projectionTexture.valid)
@@ -374,6 +397,7 @@ void RenderWidget::drawArena()
 			{
 				currentShader->bind();
 				currentShader->setUniformValue("in_Projection",_camera.projectionMatrix);
+				// set to (1,1,3)
 				currentShader->setUniformValue("in_View",_camera.viewMatrix);
 				lLoc = currentShader->uniformLocation("in_lightDir");
 				glUniform3fv(lLoc,1,glm::value_ptr(_camera.lightDir));
@@ -478,8 +502,6 @@ void RenderWidget::drawDroplets()
 		if (_renderDebug > 1)
 		{
 			currentShader = assets.getShader(DEBUG_SHADER);
-			//currentMesh = assets.getMesh(DEBUG_DROPLET_MESH);
-
 			currentTex0 = NULL;
 
 		} else
@@ -489,7 +511,6 @@ void RenderWidget::drawDroplets()
 				currentShader = _dropletStruct.projShader;
 			} else {
 				currentShader = _dropletStruct.baseShader;
-
 			}
 
 			currentTex0 = _dropletStruct.texture_0;
@@ -503,22 +524,28 @@ void RenderWidget::drawDroplets()
 			currentShader->bind();
 			currentShader->setUniformValue("in_Projection",_camera.projectionMatrix);
 			currentShader->setUniformValue("in_View",_camera.viewMatrix);
-			//_droplet->setUniformValue("in_lightDir",0.5,1,1);
+			mLoc = currentShader->uniformLocation("in_Model");
+			cLoc = currentShader->uniformLocation("in_Color");
 			lLoc = currentShader->uniformLocation("in_lightDir");
-			glUniform3fv(lLoc,1,glm::value_ptr(_camera.lightDir));
+			pLoc = currentShader->uniformLocation("in_ProjOffsets");
 			t0Loc = currentShader->uniformLocation("objectTexture");
 			t1Loc = currentShader->uniformLocation("projectionTexture");
+			
+			
+			
+
+			glUniform3fv(lLoc,1,glm::value_ptr(_camera.lightDir));
 			glUniform1i(t0Loc,0);
 			glUniform1i(t1Loc,1);
+
 			currentMesh->bindBuffer();
 			currentMesh->enableAttributeArrays();
 
-			cLoc = currentShader->uniformLocation("in_Color");
-			mLoc = currentShader->uniformLocation("in_Model");
-			pLoc = currentShader->uniformLocation("in_ProjOffsets");
+			
 			float floorWidth = _arena.tileLength * _arena.numColTiles;
 			float floorLength = _arena.tileLength * _arena.numRowTiles;
 			glm::vec2 lengths = glm::vec2(floorWidth,floorLength);		
+
 			// draw each droplet
 			glUniform2fv(pLoc,1,glm::value_ptr(lengths));
 
@@ -554,7 +581,6 @@ void RenderWidget::drawDroplets()
 				// bind droplet uniforms
 				glUniform4fv(cLoc,1,color.v);
 				glUniformMatrix4fv(mLoc,1,GL_FALSE,glm::value_ptr(model));
-				//	glDrawArrays(GL_TRIANGLES,0,vertCount);
 				currentMesh->draw();
 
 			}
@@ -568,6 +594,98 @@ void RenderWidget::drawDroplets()
 		glActiveTexture(GL_TEXTURE0);
 	}
 }
+
+void RenderWidget::drawDroplets_new()
+{
+	if (_renderState.dropletData.count() > 0)
+	{
+		QGLShaderProgram *currentShader = NULL;
+		MeshManager *currentMesh = NULL;
+		TextureManager *currentTex0 = NULL;
+
+		GLint modelMatrixLocation;
+		GLint lightPositionLocation;
+		GLint ledColorPosition;
+
+		glActiveTexture(GL_TEXTURE0);
+
+		// choose the shader to use: debug, projected texture or normal
+		if (_renderDebug > 1)
+		{
+			currentShader = assets.getShader(DEBUG_SHADER);
+			currentTex0 = NULL;
+		} 
+		else
+		{
+			if (_arena.projecting)
+			{
+				currentShader = _dropletStruct.projShader;
+			} else {
+				currentShader = _dropletStruct.baseShader;
+			}
+			currentTex0 = _dropletStruct.texture_0;
+		}
+
+		currentMesh = _dropletStruct.mesh;
+		if (currentShader != NULL && currentMesh != NULL)
+		{
+			// bind and set up droplet shader and mesh
+			currentShader->bind();
+			currentShader->setUniformValue("in_Projection",_camera.projectionMatrix);
+			currentShader->setUniformValue("in_View",_camera.viewMatrix);
+			modelMatrixLocation = currentShader->uniformLocation("in_Model");
+			lightPositionLocation = currentShader->uniformLocation("in_LightPosition");
+			ledColorPosition = currentShader->uniformLocation("in_LEDColor");
+			glUniform4fv(lightPositionLocation,1,glm::value_ptr(_lightSource.position));
+			
+
+			currentMesh->bindBuffer();
+			currentMesh->enableAttributeArrays();
+
+			float floorWidth = _arena.tileLength * _arena.numColTiles;
+			float floorLength = _arena.tileLength * _arena.numRowTiles;
+			glm::vec2 lengths = glm::vec2(floorWidth,floorLength);		
+
+			// draw each droplet
+			if (currentTex0 != NULL)
+			{
+				glActiveTexture(GL_TEXTURE0);
+				currentTex0->bindTexture();
+			}
+
+			foreach(dropletStruct_t droplet,_renderState.dropletData)
+			{
+				// make the model matrix
+				glm::vec3 origin = glm::vec3( droplet.origin.x, droplet.origin.y, droplet.origin.z);
+				glm::quat quaternion = glm::quat(droplet.quaternion.w,droplet.quaternion.x,
+					droplet.quaternion.y,droplet.quaternion.z);
+				glm::mat4 model =  glm::translate(glm::mat4(1.0f),origin);
+				model = model * glm::mat4_cast(quaternion);
+				model = glm::scale(model,glm::vec3(_arena.dropletRadius));
+				model = glm::translate(model,glm::vec3(0,0,_arena.dropletOffset));
+
+				glm::vec4 color = glm::vec4(
+					droplet.color.r / 255.0f,
+					droplet.color.g / 255.0f,
+					droplet.color.b / 255.0f,
+					1.0f
+				);
+
+				// bind droplet uniforms
+				glUniformMatrix4fv(modelMatrixLocation,1,GL_FALSE,glm::value_ptr(model));
+				glUniform4fv(ledColorPosition,1,glm::value_ptr(color));
+				currentMesh->draw();
+			}
+			currentMesh->disableAttributeArrays();
+			currentMesh->unbindBuffer();
+			currentShader->release();
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D,0);
+		}
+		glActiveTexture(GL_TEXTURE0);
+	}
+}
+
 void RenderWidget::drawObjects()
 {
 	QVector<objectStruct_t> objects = _renderState.dynamicObjectData + _renderState.staticObjectData;
