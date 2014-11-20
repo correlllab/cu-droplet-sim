@@ -25,6 +25,7 @@ out vec2 texCoords_1;
 out vec3 directionalColor;
 out vec3 ambientColor;
 out float height;
+out vec4 View;
 
 void main(){	
 
@@ -46,6 +47,7 @@ void main(){
 	gl_Position = in_Projection * (modelView * in_vertexPos);
 
 	height=in_vertexPos.z;
+	View = modelView * in_vertexPos;
 
 	//White on bottom, dome colored
 	//aux_Color = (in_vertexPos.z < 0.58) ? vec4(0.0) : vec4(in_Color.xyz,0.4);
