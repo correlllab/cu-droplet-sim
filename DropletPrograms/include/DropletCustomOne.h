@@ -1,5 +1,5 @@
 /* *** PROGRAM DESCRIPTION ***
- * 
+ * Set droplets to red, green, blue, yellow, cyan, magenta, white or off based on their id
  */
 #pragma once
 
@@ -11,7 +11,9 @@
 class DropletCustomOne : public DSimDroplet
 {
 private :
- 
+	droplet_id_type my_id;
+	void get_color_from_id(droplet_id_type id, uint8_t* r, uint8_t* g, uint8_t* b);
+
 public :
 	DropletCustomOne(ObjectPhysicsData *objPhysics);
 	~DropletCustomOne(void);

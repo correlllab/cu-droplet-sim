@@ -9,5 +9,6 @@ in vec3 vLightWeighting; //Lighting
 
 void main()
 { 
-	out_Color = vec4(ex_Color.xyz * vLightWeighting, 1.0); //Applies per-vertex lighting to objects
+	//out_Color = vec4(ex_Color.xyz * vLightWeighting, 1.0); //Applies per-vertex lighting to objects
+	out_Color = vec4(ex_Color.xyz, 1.0);
 }

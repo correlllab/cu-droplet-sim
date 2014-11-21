@@ -21,6 +21,7 @@ RenderWidget::RenderWidget(const QGLFormat& format, QWidget *parent)
 	_hud = true;
 	_drawHelp = false;
 	_hudInfo.paused = false;
+
 	// initialize the camera
 	_camera.x = 0;
 	_camera.y = 0;
@@ -34,6 +35,18 @@ RenderWidget::RenderWidget(const QGLFormat& format, QWidget *parent)
 	_camera.viewMatrix.setToIdentity();
 	_camera.lightDir = glm::vec3(1,1,3);
 	updateCamera();
+
+	// initialize the light
+	_lightSource.position.x = 5.0;
+	_lightSource.position.y = 5.0;
+	_lightSource.position.z = 10.0;
+	_lightSource.position.w = 0.0;
+
+	// initialize the projector
+	_projector.position.x = 0.0;
+	_projector.position.y = 0.0;
+	_projector.position.z = 10.0;
+	_projector.position.w = 0.0;
 
 	_timerID = 0;
 	// start out not unpaused
@@ -279,7 +292,6 @@ void RenderWidget::paintGL()
 			}
 		}
 
-		//drawArena();
 		drawDroplets();
 		drawObjects();
 
@@ -374,6 +386,7 @@ void RenderWidget::drawArena()
 			{
 				currentShader->bind();
 				currentShader->setUniformValue("in_Projection",_camera.projectionMatrix);
+				// set to (1,1,3)
 				currentShader->setUniformValue("in_View",_camera.viewMatrix);
 				lLoc = currentShader->uniformLocation("in_lightDir");
 				glUniform3fv(lLoc,1,glm::value_ptr(_camera.lightDir));
@@ -461,6 +474,7 @@ void RenderWidget::drawArena()
 
 }
 
+
 void RenderWidget::drawDroplets()
 {
 	if (_renderState.dropletData.count() > 0)
@@ -469,105 +483,105 @@ void RenderWidget::drawDroplets()
 		MeshManager *currentMesh = NULL;
 		TextureManager *currentTex0 = NULL;
 
-		GLint lLoc, cLoc, mLoc;
-		GLint t0Loc,t1Loc;
-		GLint pLoc;
+		// location of variables in the shader files
+		GLint modelMatrixLocation;
+		GLint lightPositionLocation;
+		GLint ledColorLocation;
+		GLint objectTextureLocation;
+		GLint projectionTextureLocation;
+		GLint projectionOffsetsLocation;
+		GLint projectorPositionLocation;
+		GLint is_projectingLocation;
+		GLint is_projecting;
+		
 		glActiveTexture(GL_TEXTURE0);
 
-		// check if rendering debugging is on
+		// choose the shader to use: debug or normal
 		if (_renderDebug > 1)
 		{
 			currentShader = assets.getShader(DEBUG_SHADER);
-			//currentMesh = assets.getMesh(DEBUG_DROPLET_MESH);
-
 			currentTex0 = NULL;
-
-		} else
+		} 
+		else
 		{
-			if (_arena.projecting)
-			{
-				currentShader = _dropletStruct.projShader;
-			} else {
-				currentShader = _dropletStruct.baseShader;
-
-			}
-
+			currentShader = _dropletStruct.baseShader;
 			currentTex0 = _dropletStruct.texture_0;
 		}
 
 		currentMesh = _dropletStruct.mesh;
 		if (currentShader != NULL && currentMesh != NULL)
 		{
-
-			// bind and set up droplet shader and mesh
 			currentShader->bind();
+			
+			// get shader locations
+			modelMatrixLocation = currentShader->uniformLocation("in_Model");
+			lightPositionLocation = currentShader->uniformLocation("in_LightPosition");
+			ledColorLocation = currentShader->uniformLocation("in_LEDColor");
+			projectionTextureLocation = currentShader->uniformLocation("projectionTexture");
+			projectionOffsetsLocation = currentShader->uniformLocation("in_ProjOffsets");
+			projectorPositionLocation = currentShader->uniformLocation("projectorPosition");
+			is_projectingLocation = currentShader->uniformLocation("is_projecting");
+			objectTextureLocation = currentShader->uniformLocation("objectTexture");
+			
+			// set shader variables for all droplets
+			glUniform4fv(projectorPositionLocation,1,glm::value_ptr(_projector.position));
+			glUniform1i(is_projectingLocation,(GLint)_arena.projecting);
+			glUniform4fv(lightPositionLocation,1,glm::value_ptr(_lightSource.position));
+			glUniform1i(objectTextureLocation,0);
+			glUniform1i(projectionTextureLocation,1);
 			currentShader->setUniformValue("in_Projection",_camera.projectionMatrix);
 			currentShader->setUniformValue("in_View",_camera.viewMatrix);
-			//_droplet->setUniformValue("in_lightDir",0.5,1,1);
-			lLoc = currentShader->uniformLocation("in_lightDir");
-			glUniform3fv(lLoc,1,glm::value_ptr(_camera.lightDir));
-			t0Loc = currentShader->uniformLocation("objectTexture");
-			t1Loc = currentShader->uniformLocation("projectionTexture");
-			glUniform1i(t0Loc,0);
-			glUniform1i(t1Loc,1);
-			currentMesh->bindBuffer();
-			currentMesh->enableAttributeArrays();
 
-			cLoc = currentShader->uniformLocation("in_Color");
-			mLoc = currentShader->uniformLocation("in_Model");
-			pLoc = currentShader->uniformLocation("in_ProjOffsets");
+			// pass shader information to calculate projected texture
 			float floorWidth = _arena.tileLength * _arena.numColTiles;
 			float floorLength = _arena.tileLength * _arena.numRowTiles;
 			glm::vec2 lengths = glm::vec2(floorWidth,floorLength);		
-			// draw each droplet
-			glUniform2fv(pLoc,1,glm::value_ptr(lengths));
+			glUniform2fv(projectionOffsetsLocation,1,glm::value_ptr(lengths));
 
+			currentMesh->bindBuffer();
+			currentMesh->enableAttributeArrays();	
+
+			// draw each droplet
 			if (currentTex0 != NULL)
 			{
 				glActiveTexture(GL_TEXTURE0);
 				currentTex0->bindTexture();
-
 			}
-
 
 			foreach(dropletStruct_t droplet,_renderState.dropletData)
 			{
 				// make the model matrix
 				glm::vec3 origin = glm::vec3( droplet.origin.x, droplet.origin.y, droplet.origin.z);
-
 				glm::quat quaternion = glm::quat(droplet.quaternion.w,droplet.quaternion.x,
 					droplet.quaternion.y,droplet.quaternion.z);
-
 				glm::mat4 model =  glm::translate(glm::mat4(1.0f),origin);
 				model = model * glm::mat4_cast(quaternion);
 				model = glm::scale(model,glm::vec3(_arena.dropletRadius));
 				model = glm::translate(model,glm::vec3(0,0,_arena.dropletOffset));
 
-
-				vec4 color = {
+				// set droplet's color
+				glm::vec4 color = glm::vec4(
 					droplet.color.r / 255.0f,
 					droplet.color.g / 255.0f,
 					droplet.color.b / 255.0f,
 					1.0f
-				};
+				);
 
 				// bind droplet uniforms
-				glUniform4fv(cLoc,1,color.v);
-				glUniformMatrix4fv(mLoc,1,GL_FALSE,glm::value_ptr(model));
-				//	glDrawArrays(GL_TRIANGLES,0,vertCount);
+				glUniformMatrix4fv(modelMatrixLocation,1,GL_FALSE,glm::value_ptr(model));
+				glUniform4fv(ledColorLocation,1,glm::value_ptr(color));
 				currentMesh->draw();
-
 			}
 			currentMesh->disableAttributeArrays();
 			currentMesh->unbindBuffer();
 			currentShader->release();
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D,0);
-
+			//glActiveTexture(GL_TEXTURE0); // whay are textures bound and activated at the end?
+			//glBindTexture(GL_TEXTURE_2D,0);
 		}
-		glActiveTexture(GL_TEXTURE0);
+		//glActiveTexture(GL_TEXTURE0);
 	}
 }
+
 void RenderWidget::drawObjects()
 {
 	QVector<objectStruct_t> objects = _renderState.dynamicObjectData + _renderState.staticObjectData;
@@ -1075,187 +1089,6 @@ void RenderWidget::setupRenderStructs()
 
 }
 
-/*
-void RenderWidget::setupArena()
-{
-
-_arenaObjects.clear();
-
-glm::vec4 grey = glm::vec4(0.5,0.5,0.5,1);
-float xTilePos, yTilePos;
-
-// make floor tiles first
-xTilePos = (-_arena.tileLength * _arena.numColTiles / 2.0f) + (_arena.tileLength/2);
-yTilePos = (_arena.tileLength * _arena.numRowTiles / 2.0f) - (_arena.tileLength/2);
-
-float xTexWidth,yTexWidth;
-xTexWidth = (1.0 / _arena.numColTiles);
-yTexWidth = (1.0 / _arena.numRowTiles);
-
-// CREATE FLOOR TILES
-for(int i = 0; i < _arena.numRowTiles * _arena.numColTiles; i++)
-{
-float xTexOffset, yTexOffset; 
-if(xTilePos >= (_arena.tileLength * _arena.numColTiles / 2.0f))
-{
-xTilePos = (-_arena.tileLength * _arena.numColTiles / 2.0f) + (_arena.tileLength/2);
-yTilePos -= _arena.tileLength;
-}
-
-xTexOffset = (xTilePos - (_arena.tileLength / 2.0) + (_arena.tileLength * _arena.numColTiles / 2.0f)) / (_arena.tileLength * _arena.numColTiles);
-yTexOffset = (yTilePos - (_arena.tileLength / 2.0) + (_arena.tileLength * _arena.numRowTiles / 2.0f)) / (_arena.tileLength * _arena.numRowTiles);
-//	qDebug() << xTexOffset << yTexOffset;
-renderStruct_t floor;
-floor.color = grey;
-//floor.color = glm::vec4(qrand()/(float) RAND_MAX,qrand()/(float) RAND_MAX,qrand()/(float) RAND_MAX,1);
-floor.origin = glm::vec3(xTilePos, yTilePos, -0.05f);
-floor.scale = glm::vec3(_arena.tileLength, _arena.tileLength,  0.1f);
-floor.rotation = glm::vec3(0,0,0);
-floor.modelMatrix = makeModelMatrix(floor.scale,floor.rotation,floor.origin);
-floor.mesh = assets.getMesh(assets.lookupAssetName(FLOOR_MESH_NAME));
-floor.baseShader = assets.getShader(assets.lookupAssetName(FLOOR_SHADER_NAME));
-floor.projShader = assets.getShader(assets.lookupAssetName(FLOOR_PROJECTION_SHADER_NAME));
-floor.texture_0 = assets.getTexture(assets.lookupAssetName(FLOOR_TEXTURE_NAME));
-floor.texture_1 = assets.getProjection(_arena.projTexture);
-_arenaObjects.push_back(floor);
-xTilePos += _arena.tileLength;
-
-}
-
-//walls
-for(int j = 0; j < 2; j++)	
-{
-if(j < 1)
-{
-yTilePos = -_arena.tileLength * _arena.numRowTiles / 2.0f + _arena.tileLength/2.0f;
-xTilePos = -_arena.tileLength * _arena.numColTiles / 2.0f + _arena.tileLength/2.0f;
-}
-else
-{
-yTilePos = _arena.tileLength * _arena.numRowTiles / 2.0f - _arena.tileLength/2.0f;
-xTilePos = _arena.tileLength * _arena.numColTiles / 2.0f - _arena.tileLength/2.0f;
-}
-
-for(int i = 0; i < _arena.numRowTiles; i++)
-{
-float xPos; 
-if (j < 1)
-{
-xPos = -_arena.tileLength * _arena.numColTiles/2.0f - _arena.wallWidth/2.0f;
-}
-else{
-xPos = _arena.tileLength * _arena.numColTiles/2.0f + _arena.wallWidth/2.0f;
-}
-float zpos = (.5 * _arena.wallHeight) - (.5 * 1) - .5;
-
-renderStruct_t wall;
-//	wall.color = glm::vec4(qrand()/(float) RAND_MAX,qrand()/(float) RAND_MAX,qrand()/(float) RAND_MAX,1);
-wall.color = grey;
-wall.origin = glm::vec3(xPos,yTilePos,zpos);
-wall.scale = glm::vec3(_arena.wallWidth,_arena.tileLength,_arena.wallHeight);
-wall.rotation = glm::vec3(0,0,0);
-wall.modelMatrix = makeModelMatrix(wall.scale,wall.rotation,wall.origin);
-
-wall.mesh = assets.getMesh(assets.lookupAssetName(WALL_MESH_NAME));
-wall.baseShader = assets.getShader(assets.lookupAssetName(WALL_SHADER_NAME));
-wall.projShader = assets.getShader(assets.lookupAssetName(WALL_SHADER_NAME));
-wall.texture_0 = assets.getTexture(assets.lookupAssetName(WALL_TEXTURE_NAME));
-wall.texture_1 = NULL;
-
-
-
-_arenaObjects.push_back(wall);
-
-
-if(j < 1) yTilePos += _arena.tileLength; else yTilePos -= _arena.tileLength;
-}
-for(int i = 0; i < _arena.numColTiles; i++)
-{
-float yPos; 
-if (j < 1)
-{
-yPos = _arena.tileLength * _arena.numRowTiles/2.0f + _arena.wallWidth/2.0f;
-}
-else{
-yPos = -_arena.tileLength * _arena.numRowTiles/2.0f - _arena.wallWidth/2.0f;
-}
-float zpos = (.5 * _arena.wallHeight) - (.5 * 1) -.5;
-
-renderStruct_t wall;
-//wall.color = glm::vec4(qrand()/(float) RAND_MAX,qrand()/(float) RAND_MAX,qrand()/(float) RAND_MAX,1);
-wall.color = grey;
-wall.origin = glm::vec3(xTilePos,yPos,zpos);
-wall.scale = glm::vec3(_arena.tileLength,_arena.wallWidth,_arena.wallHeight);
-wall.rotation = glm::vec3(0,0,0);
-wall.modelMatrix = makeModelMatrix(wall.scale,wall.rotation,wall.origin);
-wall.mesh = assets.getMesh(assets.lookupAssetName(WALL_MESH_NAME));
-wall.baseShader = assets.getShader(assets.lookupAssetName(WALL_SHADER_NAME));
-wall.projShader = assets.getShader(assets.lookupAssetName(WALL_SHADER_NAME));
-wall.texture_0 = assets.getTexture(assets.lookupAssetName(WALL_TEXTURE_NAME));
-wall.texture_1 = NULL;
-
-_arenaObjects.push_back(wall);
-
-
-if(j < 1) xTilePos += _arena.tileLength; else xTilePos -= _arena.tileLength;
-}
-}
-
-
-
-
-
-
-float xPos;
-float yPos;
-float yRot;
-float mult;
-// Create four IR Towers
-for(int i = 0; i < 4; i++)
-{
-yRot = 0;
-mult = -1;
-if(i % 2 == 0)
-{
-xPos = -_arena.tileLength * _arena.numColTiles/2.0f - 6;
-yRot += 180;
-}
-else
-{
-xPos = _arena.tileLength * _arena.numColTiles/2.0f + 6;
-mult = 1;
-}
-if(i / 2 == 0)
-{
-yPos = -_arena.tileLength * _arena.numRowTiles/2.0f - 6;
-yRot -= mult * 45;
-}
-else
-{
-yPos = _arena.tileLength * _arena.numRowTiles/2.0f + 6;
-yRot += mult * 45;
-}
-
-renderStruct_t tower;
-tower.color = grey;
-//			tower.color = glm::vec4(qrand()/(float) RAND_MAX,qrand()/(float) RAND_MAX,qrand()/(float) RAND_MAX,1);
-tower.origin = glm::vec3(xPos, yPos, 0.0);
-tower.scale = glm::vec3(2.0f,2.0f,2.0f);
-tower.rotation = glm::vec3(0,0,yRot);
-tower.modelMatrix = makeModelMatrix(tower.scale,tower.rotation,tower.origin);
-tower.mesh = assets.getMesh(assets.lookupAssetName(TOWER_MESH_NAME));
-tower.baseShader = assets.getShader(assets.lookupAssetName(TOWER_SHADER_NAME));
-tower.projShader = assets.getShader(assets.lookupAssetName(TOWER_SHADER_NAME));
-tower.texture_0 = assets.getTexture(assets.lookupAssetName(TOWER_TEXTURE_NAME));
-tower.texture_1 = NULL;
-_arenaObjects.push_back(tower);
-
-}
-
-}
-
-*/
-
 // generate a model matrix
 glm::mat4 RenderWidget::makeModelMatrix(glm::vec3 scale, glm::vec3 rotate, glm::vec3 translation)
 {
@@ -1266,8 +1099,6 @@ glm::mat4 RenderWidget::makeModelMatrix(glm::vec3 scale, glm::vec3 rotate, glm::
 	model = glm::scale(model,scale);
 	return model;
 }
-
-
 
 
 void RenderWidget::timerEvent ( QTimerEvent * event ) 
