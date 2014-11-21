@@ -606,6 +606,9 @@ void RenderWidget::drawDroplets_new()
 		GLint modelMatrixLocation;
 		GLint lightPositionLocation;
 		GLint ledColorPosition;
+		GLint objectTextureLocation;
+		GLint projectionTextureLocation;
+		GLint projectionOffsetsLocation;
 
 		glActiveTexture(GL_TEXTURE0);
 
@@ -638,13 +641,19 @@ void RenderWidget::drawDroplets_new()
 			ledColorPosition = currentShader->uniformLocation("in_LEDColor");
 			glUniform4fv(lightPositionLocation,1,glm::value_ptr(_lightSource.position));
 			
-
-			currentMesh->bindBuffer();
-			currentMesh->enableAttributeArrays();
+			//junk from old code to get texture
+			objectTextureLocation = currentShader->uniformLocation("objectTexture");
+			projectionTextureLocation = currentShader->uniformLocation("projectionTexture");
+			projectionOffsetsLocation = currentShader->uniformLocation("in_ProjOffsets");
 
 			float floorWidth = _arena.tileLength * _arena.numColTiles;
 			float floorLength = _arena.tileLength * _arena.numRowTiles;
 			glm::vec2 lengths = glm::vec2(floorWidth,floorLength);		
+			glUniform2fv(projectionOffsetsLocation,1,glm::value_ptr(lengths));
+			// end junk
+
+			currentMesh->bindBuffer();
+			currentMesh->enableAttributeArrays();	
 
 			// draw each droplet
 			if (currentTex0 != NULL)
@@ -679,10 +688,10 @@ void RenderWidget::drawDroplets_new()
 			currentMesh->disableAttributeArrays();
 			currentMesh->unbindBuffer();
 			currentShader->release();
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D,0);
+			//glActiveTexture(GL_TEXTURE0);
+			//glBindTexture(GL_TEXTURE_2D,0);
 		}
-		glActiveTexture(GL_TEXTURE0);
+		//glActiveTexture(GL_TEXTURE0);
 	}
 }
 
