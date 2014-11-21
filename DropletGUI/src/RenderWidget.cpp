@@ -37,26 +37,16 @@ RenderWidget::RenderWidget(const QGLFormat& format, QWidget *parent)
 	updateCamera();
 
 	// initialize the light
-	_lightSource.position.x = 10.0;
-	_lightSource.position.y = 10.0;
+	_lightSource.position.x = 5.0;
+	_lightSource.position.y = 5.0;
 	_lightSource.position.z = 10.0;
 	_lightSource.position.w = 0.0;
 
-	_lightSource.ambient.x = 0.3; 
-	_lightSource.ambient.y = 0.3;
-	_lightSource.ambient.z = 0.3;
-	_lightSource.ambient.w = 1.0;
-
-	_lightSource.diffuse.x = 1.0;
-	_lightSource.diffuse.y = 1.0;
-	_lightSource.diffuse.z = 1.0;
-	_lightSource.diffuse.w = 1.0;
-
-	_lightSource.specular.x = 0.5;
-	_lightSource.specular.y = 0.5;
-	_lightSource.specular.z = 0.5;
-	_lightSource.specular.w = 1.0;
-
+	// initialize the projector
+	_projector.position.x = 0.0;
+	_projector.position.y = 0.0;
+	_projector.position.z = 10.0;
+	_projector.position.w = 0.0;
 
 	_timerID = 0;
 	// start out not unpaused
@@ -302,8 +292,7 @@ void RenderWidget::paintGL()
 			}
 		}
 
-		//drawArena();
-		drawDroplets_new();
+		drawDroplets();
 		drawObjects();
 
 		if (_arena.projecting && _projectionTexture.valid)
@@ -485,6 +474,7 @@ void RenderWidget::drawArena()
 
 }
 
+
 void RenderWidget::drawDroplets()
 {
 	if (_renderState.dropletData.count() > 0)
@@ -493,126 +483,20 @@ void RenderWidget::drawDroplets()
 		MeshManager *currentMesh = NULL;
 		TextureManager *currentTex0 = NULL;
 
-		GLint lLoc, cLoc, mLoc;
-		GLint t0Loc,t1Loc;
-		GLint pLoc;
-		glActiveTexture(GL_TEXTURE0);
-
-		// check if rendering debugging is on
-		if (_renderDebug > 1)
-		{
-			currentShader = assets.getShader(DEBUG_SHADER);
-			currentTex0 = NULL;
-
-		} else
-		{
-			if (_arena.projecting)
-			{
-				currentShader = _dropletStruct.projShader;
-			} else {
-				currentShader = _dropletStruct.baseShader;
-			}
-
-			currentTex0 = _dropletStruct.texture_0;
-		}
-
-		currentMesh = _dropletStruct.mesh;
-		if (currentShader != NULL && currentMesh != NULL)
-		{
-
-			// bind and set up droplet shader and mesh
-			currentShader->bind();
-			currentShader->setUniformValue("in_Projection",_camera.projectionMatrix);
-			currentShader->setUniformValue("in_View",_camera.viewMatrix);
-			mLoc = currentShader->uniformLocation("in_Model");
-			cLoc = currentShader->uniformLocation("in_Color");
-			lLoc = currentShader->uniformLocation("in_lightDir");
-			pLoc = currentShader->uniformLocation("in_ProjOffsets");
-			t0Loc = currentShader->uniformLocation("objectTexture");
-			t1Loc = currentShader->uniformLocation("projectionTexture");
-			
-			
-			
-
-			glUniform3fv(lLoc,1,glm::value_ptr(_camera.lightDir));
-			glUniform1i(t0Loc,0);
-			glUniform1i(t1Loc,1);
-
-			currentMesh->bindBuffer();
-			currentMesh->enableAttributeArrays();
-
-			
-			float floorWidth = _arena.tileLength * _arena.numColTiles;
-			float floorLength = _arena.tileLength * _arena.numRowTiles;
-			glm::vec2 lengths = glm::vec2(floorWidth,floorLength);		
-
-			// draw each droplet
-			glUniform2fv(pLoc,1,glm::value_ptr(lengths));
-
-			if (currentTex0 != NULL)
-			{
-				glActiveTexture(GL_TEXTURE0);
-				currentTex0->bindTexture();
-
-			}
-
-
-			foreach(dropletStruct_t droplet,_renderState.dropletData)
-			{
-				// make the model matrix
-				glm::vec3 origin = glm::vec3( droplet.origin.x, droplet.origin.y, droplet.origin.z);
-
-				glm::quat quaternion = glm::quat(droplet.quaternion.w,droplet.quaternion.x,
-					droplet.quaternion.y,droplet.quaternion.z);
-
-				glm::mat4 model =  glm::translate(glm::mat4(1.0f),origin);
-				model = model * glm::mat4_cast(quaternion);
-				model = glm::scale(model,glm::vec3(_arena.dropletRadius));
-				model = glm::translate(model,glm::vec3(0,0,_arena.dropletOffset));
-
-
-				vec4 color = {
-					droplet.color.r / 255.0f,
-					droplet.color.g / 255.0f,
-					droplet.color.b / 255.0f,
-					1.0f
-				};
-
-				// bind droplet uniforms
-				glUniform4fv(cLoc,1,color.v);
-				glUniformMatrix4fv(mLoc,1,GL_FALSE,glm::value_ptr(model));
-				currentMesh->draw();
-
-			}
-			currentMesh->disableAttributeArrays();
-			currentMesh->unbindBuffer();
-			currentShader->release();
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D,0);
-
-		}
-		glActiveTexture(GL_TEXTURE0);
-	}
-}
-
-void RenderWidget::drawDroplets_new()
-{
-	if (_renderState.dropletData.count() > 0)
-	{
-		QGLShaderProgram *currentShader = NULL;
-		MeshManager *currentMesh = NULL;
-		TextureManager *currentTex0 = NULL;
-
+		// location of variables in the shader files
 		GLint modelMatrixLocation;
 		GLint lightPositionLocation;
-		GLint ledColorPosition;
+		GLint ledColorLocation;
 		GLint objectTextureLocation;
 		GLint projectionTextureLocation;
 		GLint projectionOffsetsLocation;
-
+		GLint projectorPositionLocation;
+		GLint is_projectingLocation;
+		GLint is_projecting;
+		
 		glActiveTexture(GL_TEXTURE0);
 
-		// choose the shader to use: debug, projected texture or normal
+		// choose the shader to use: debug or normal
 		if (_renderDebug > 1)
 		{
 			currentShader = assets.getShader(DEBUG_SHADER);
@@ -620,37 +504,39 @@ void RenderWidget::drawDroplets_new()
 		} 
 		else
 		{
-			if (_arena.projecting)
-			{
-				currentShader = _dropletStruct.projShader;
-			} else {
-				currentShader = _dropletStruct.baseShader;
-			}
+			currentShader = _dropletStruct.baseShader;
 			currentTex0 = _dropletStruct.texture_0;
 		}
 
 		currentMesh = _dropletStruct.mesh;
 		if (currentShader != NULL && currentMesh != NULL)
 		{
-			// bind and set up droplet shader and mesh
 			currentShader->bind();
-			currentShader->setUniformValue("in_Projection",_camera.projectionMatrix);
-			currentShader->setUniformValue("in_View",_camera.viewMatrix);
+			
+			// get shader locations
 			modelMatrixLocation = currentShader->uniformLocation("in_Model");
 			lightPositionLocation = currentShader->uniformLocation("in_LightPosition");
-			ledColorPosition = currentShader->uniformLocation("in_LEDColor");
-			glUniform4fv(lightPositionLocation,1,glm::value_ptr(_lightSource.position));
-			
-			//junk from old code to get texture
-			objectTextureLocation = currentShader->uniformLocation("objectTexture");
+			ledColorLocation = currentShader->uniformLocation("in_LEDColor");
 			projectionTextureLocation = currentShader->uniformLocation("projectionTexture");
 			projectionOffsetsLocation = currentShader->uniformLocation("in_ProjOffsets");
+			projectorPositionLocation = currentShader->uniformLocation("projectorPosition");
+			is_projectingLocation = currentShader->uniformLocation("is_projecting");
+			objectTextureLocation = currentShader->uniformLocation("objectTexture");
+			
+			// set shader variables for all droplets
+			glUniform4fv(projectorPositionLocation,1,glm::value_ptr(_projector.position));
+			glUniform1i(is_projectingLocation,(GLint)_arena.projecting);
+			glUniform4fv(lightPositionLocation,1,glm::value_ptr(_lightSource.position));
+			glUniform1i(objectTextureLocation,0);
+			glUniform1i(projectionTextureLocation,1);
+			currentShader->setUniformValue("in_Projection",_camera.projectionMatrix);
+			currentShader->setUniformValue("in_View",_camera.viewMatrix);
 
+			// pass shader information to calculate projected texture
 			float floorWidth = _arena.tileLength * _arena.numColTiles;
 			float floorLength = _arena.tileLength * _arena.numRowTiles;
 			glm::vec2 lengths = glm::vec2(floorWidth,floorLength);		
 			glUniform2fv(projectionOffsetsLocation,1,glm::value_ptr(lengths));
-			// end junk
 
 			currentMesh->bindBuffer();
 			currentMesh->enableAttributeArrays();	
@@ -673,6 +559,7 @@ void RenderWidget::drawDroplets_new()
 				model = glm::scale(model,glm::vec3(_arena.dropletRadius));
 				model = glm::translate(model,glm::vec3(0,0,_arena.dropletOffset));
 
+				// set droplet's color
 				glm::vec4 color = glm::vec4(
 					droplet.color.r / 255.0f,
 					droplet.color.g / 255.0f,
@@ -682,13 +569,13 @@ void RenderWidget::drawDroplets_new()
 
 				// bind droplet uniforms
 				glUniformMatrix4fv(modelMatrixLocation,1,GL_FALSE,glm::value_ptr(model));
-				glUniform4fv(ledColorPosition,1,glm::value_ptr(color));
+				glUniform4fv(ledColorLocation,1,glm::value_ptr(color));
 				currentMesh->draw();
 			}
 			currentMesh->disableAttributeArrays();
 			currentMesh->unbindBuffer();
 			currentShader->release();
-			//glActiveTexture(GL_TEXTURE0);
+			//glActiveTexture(GL_TEXTURE0); // whay are textures bound and activated at the end?
 			//glBindTexture(GL_TEXTURE_2D,0);
 		}
 		//glActiveTexture(GL_TEXTURE0);

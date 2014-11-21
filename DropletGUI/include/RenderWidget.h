@@ -240,7 +240,6 @@ protected:
 	*/
 
 	void drawDroplets();
-	void drawDroplets_new();
 
 	/**
 	* \fn	void RenderWidget::drawObjects();
@@ -547,12 +546,22 @@ private:
 	/**
 	* \brief	Struct that contains the light source info.
 	*/
+	// TODO: ambient, diffuse, and specualr info is currently hardcoded into shader.
+	// pass these in so lighting could be changed on the fly.
 	struct {
 		glm::vec4 position;
 		glm::vec4 ambient;
 		glm::vec4 diffuse;
 		glm::vec4 specular;
 	} _lightSource;
+
+	/** 
+	* \brief	Struct that keeps projector info.
+	*/
+	struct {
+		glm::vec4 position;
+	} _projector;
+
 
 	/**
 	* \brief	Struct that keeps track of mouse status.
