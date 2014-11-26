@@ -326,7 +326,7 @@ protected:
 	* \brief	Test if mouse clicked a droplet
 	*/
 
-	void mouseSelect ( int x, int y );
+	void mouseSelect ( QPoint location );
 
 	/**
 	* \fn	void RenderWidget::mouseMoveEvent ( QMouseEvent * event );
