@@ -34,6 +34,7 @@ void RenderWidget::mousePressEvent ( QMouseEvent * event )
 		_mouseStatus.leftButtonHeldDown = true;
 		_mouseStatus.startX = event->x();
 		_mouseStatus.startY = event->y();
+		setCursor(QCursor(Qt::CrossCursor));
 		QPoint selectionPoint(_mouseStatus.startX,_mouseStatus.startY);
 		mouseSelect(selectionPoint);
 		event->accept();
@@ -54,20 +55,17 @@ void RenderWidget::mousePressEvent ( QMouseEvent * event )
 }
 
 // handle selection of droplet
+// follows: http://www.lighthouse3d.com/tutorials/maths/ray-sphere-intersection/
+// collision checking is done in eye-space
+// TODO: update to use bullet's collision detection methods.
 void RenderWidget::mouseSelect (QPoint location)
 {
-	//QPoint toolTipLocation;
 	QString toolTipText;
 	QMatrix4x4 modelMatrix;
+	float distanceToNearestDroplet=-1.0f; // keeps track of nearest droplet clicked on 
+	int nearestId = -1;
 
-	// Window location
-
-	setCursor(QCursor(Qt::CrossCursor));
-	//toolTipLocation.setX(0.0f);
-	//toolTipLocation.setY(0.0f);
-	//toolTipText = QString("mouse = %1, %2").arg(_mouseStatus.startX).arg(_mouseStatus.startY);
-	//toolTipText.append(QString("\ncamera = %1, %2, %3").arg(_camera.x).arg(_camera.y).arg(_camera.z));
-
+	// current window 
 	float width;
 	float height;
 	width = this->width();
@@ -79,7 +77,6 @@ void RenderWidget::mouseSelect (QPoint location)
 	nds.setY(1.0f - (2.0f * _mouseStatus.startY) / height);
 	nds.setZ(0.0f);
 	nds.setW(0.0f);
-	//toolTipText.append(QString("\nnds: %1, %2, %3").arg(nds.x()).arg(nds.y()).arg(nds.z()));
 		
 	// Clip coordinates:
 	QVector4D clip;
@@ -100,30 +97,17 @@ void RenderWidget::mouseSelect (QPoint location)
 	eye_far.operator/=(eye_far.w());
 
 	modelMatrix = _camera.projectionMatrix;
-	//toolTipText.append(QString("\n projection: \n %1 %2 %3 %4 \n %5 %6 %7 %8 \n %9 %10 %11 %12 \n %13 %14 %15 %16")
-	//			.arg(modelMatrix.row(0).x()).arg(modelMatrix.row(0).y()).arg(modelMatrix.row(0).z()).arg(modelMatrix.row(0).w())
-	//			.arg(modelMatrix.row(1).x()).arg(modelMatrix.row(1).y()).arg(modelMatrix.row(1).z()).arg(modelMatrix.row(1).w())
-	//			.arg(modelMatrix.row(2).x()).arg(modelMatrix.row(2).y()).arg(modelMatrix.row(2).z()).arg(modelMatrix.row(2).w())
-	//			.arg(modelMatrix.row(3).x()).arg(modelMatrix.row(3).y()).arg(modelMatrix.row(3).z()).arg(modelMatrix.row(3).w()));
-
-
-	// show tool tip
-	//toolTipText.append(QString("\n eye n: %1, %2, %3, %4 \n eye f: %5, %6, %7, %8")
-	//	.arg(eye_near.x()).arg(eye_near.y()).arg(eye_near.z()).arg(eye_near.w())
-	//	.arg(eye_far.x()).arg(eye_far.y()).arg(eye_far.z()).arg(eye_far.w()));
-
-	//toolTipText.append(QString("\n r = %1").arg(_arena.dropletRadius));
 
 	QVector3D click_ray;
 	click_ray.setX(eye_far.x() - eye_near.x());
 	click_ray.setY(eye_far.y() - eye_near.y());
 	click_ray.setZ(eye_far.z() - eye_near.z());
 	click_ray.normalize();
-	//toolTipText.append(QString("\n ray = %1, %2, %3").arg(click_ray.x()).arg(click_ray.y()).arg(click_ray.z()));
 
-	// show locations of droplets
 	foreach(dropletStruct_t droplet,_renderState.dropletData)
 	{
+		// compute model matrix
+		// TODO: this is already done with drawDroplets() function, shouldn't need to redo it
 		glm::vec3 origin = glm::vec3( droplet.origin.x, droplet.origin.y, droplet.origin.z);
 
 		glm::quat quaternion = glm::quat(droplet.quaternion.w,droplet.quaternion.x,
@@ -134,7 +118,7 @@ void RenderWidget::mouseSelect (QPoint location)
 		model = glm::scale(model,glm::vec3(_arena.dropletRadius));
 		model = glm::translate(model,glm::vec3(0,0,_arena.dropletOffset));
 
-			
+		// change model from glm::mat4 to QMatrix4x4	
 		QVector4D rowValues;
 		for (int i = 0; i < 4; i++) 
 		{
@@ -144,62 +128,47 @@ void RenderWidget::mouseSelect (QPoint location)
 			rowValues.setW(model[i][3]);
 			modelMatrix.setColumn(i,rowValues);
 		}
-		//toolTipText.append(QString("\n model: \n %1 %2 %3 %4 \n %5 %6 %7 %8 \n %9 %10 %11 %12 \n %13 %14 %15 %16")
-		//		.arg(modelMatrix.row(0).x()).arg(modelMatrix.row(0).y()).arg(modelMatrix.row(0).z()).arg(modelMatrix.row(0).w())
-		//		.arg(modelMatrix.row(1).x()).arg(modelMatrix.row(1).y()).arg(modelMatrix.row(1).z()).arg(modelMatrix.row(1).w())
-		//		.arg(modelMatrix.row(2).x()).arg(modelMatrix.row(2).y()).arg(modelMatrix.row(2).z()).arg(modelMatrix.row(2).w())
-		//		.arg(modelMatrix.row(3).x()).arg(modelMatrix.row(3).y()).arg(modelMatrix.row(3).z()).arg(modelMatrix.row(3).w()));
 
 		QMatrix4x4 modelViewProj = _camera.viewMatrix * modelMatrix;
-		QVector4D dropletOrigin;
-		dropletOrigin.setX(0);
-		dropletOrigin.setY(0);
-		dropletOrigin.setZ(1.0);
-		dropletOrigin.setW(1);
-		//
-		//toolTipText.append(QString("\norigin = %1, %2, %3").arg(dropletOrigin.x()).arg(dropletOrigin.y()).arg(dropletOrigin.z()));
+
+		// TODO: correct z coordinate so collision is more exact.
+		QVector4D dropletOrigin(0.0,0.0,1.0,1.0);
 
 		QVector4D dropletPosition = modelViewProj * dropletOrigin;
 			
-		//toolTipText.append(QString("\ndPos: %1, %2, %3, %4")
-		//						.arg(dropletPosition.x())
-		//						.arg(dropletPosition.y())
-		//						.arg(dropletPosition.z())
-		//						.arg(dropletPosition.w()));
-			
+		// vector from near_eye point to droplet location
 		QVector3D u = QVector3D(dropletPosition.x() - eye_near.x(),
 								dropletPosition.y() - eye_near.y(),
 								dropletPosition.z() - eye_near.z());
 
+		// projection of vector onto the click ray
 		float projection = QVector3D::dotProduct(click_ray,u);
-		//toolTipText.append(QString("\n p = %1").arg(projection));
+
+		// vector from droplet to the click ray, distance <= radius --> intersection
+		QVector3D toClickRay;
+		toClickRay.setX(eye_near.x() + projection * click_ray.x());
+		toClickRay.setY(eye_near.y() + projection * click_ray.y());
+		toClickRay.setZ(eye_near.z() + projection * click_ray.z());
 
 		QVector3D toSphere;
-		toSphere.setX(dropletPosition.x() - (eye_near.x() + projection * click_ray.x()));
-		toSphere.setY(dropletPosition.y() - (eye_near.y() + projection * click_ray.y()));
-		toSphere.setZ(dropletPosition.z() - (eye_near.z() + projection * click_ray.z()));
-		//toolTipText.append(QString("\ngtoS = %1, %2, %3").arg(toSphere.x()).arg(toSphere.y()).arg(toSphere.z()));
+		toSphere.setX(dropletPosition.x() - toClickRay.x());
+		toSphere.setY(dropletPosition.y() - toClickRay.y());
+		toSphere.setZ(dropletPosition.z() - toClickRay.z());
 
 		float distance = toSphere.length();
-		//toolTipText.append(QString("\n dist = %1").arg(distance));
+		float distanceToScreen = toClickRay.length();
 
 		if (distance <= _arena.dropletRadius) 
 		{
-			// TODO: keep only closest one to eye
-			//toolTipText.append(QString("\nintersection"));
-			toolTipText = QString("id = %1").arg(droplet.dropletID);
-			unsigned int temp = droplet.color.r;
-			droplet.color.r = droplet.color.b;
-			droplet.color.b = droplet.color.g;
-			droplet.color.g = temp;
-			QToolTip::showText(location, toolTipText);
+			// onlykeep the hit closest to the screen
+			if (nearestId == -1 || distanceToNearestDroplet > distanceToScreen) 
+			{
+				nearestId = droplet.dropletID;
+				distanceToNearestDroplet = distanceToScreen;
+				toolTipText = QString("id = %1\nTODO: something cool!").arg(droplet.dropletID);
+				QToolTip::showText(location, toolTipText);
+			}
 		}
-		//else 
-		//{
-		//	toolTipText.append(QString("\nno intersection"));
-		//}
-		//QToolTip::showText(toolTipLocation,toolTipText);
-
 	}
 }
 
