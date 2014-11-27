@@ -294,6 +294,7 @@ void RenderWidget::paintGL()
 
 		drawDroplets();
 		drawObjects();
+		
 
 		if (_arena.projecting && _projectionTexture.valid)
 		{

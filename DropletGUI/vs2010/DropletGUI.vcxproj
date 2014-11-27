@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="DebugTeam|Win32">
@@ -210,6 +210,18 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\Assets\Shaders\CommonVertex.glsl" />
+    <None Include="..\..\Assets\Shaders\DebugFragment.glsl" />
+    <None Include="..\..\Assets\Shaders\DebugVertex.glsl" />
+    <None Include="..\..\Assets\Shaders\DropletCommonVertex.glsl" />
+    <None Include="..\..\Assets\Shaders\DropletFragment.glsl" />
+    <None Include="..\..\Assets\Shaders\DropletTexFragment.glsl" />
+    <None Include="..\..\Assets\Shaders\ProjDropletFragment.glsl" />
+    <None Include="..\..\Assets\Shaders\ProjectorFragment.glsl" />
+    <None Include="..\..\Assets\Shaders\shaders.txt" />
+    <None Include="..\..\Assets\Shaders\SimpleFragment.glsl" />
+    <None Include="..\..\Assets\Shaders\TextureFragment.glsl" />
+    <None Include="..\assets\manifest.txt" />
     <CustomBuild Include="..\include\MainWindow.ui">
       <FileType>Document</FileType>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTDIR)\bin\uic.exe;%(AdditionalInputs)</AdditionalInputs>

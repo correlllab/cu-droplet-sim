@@ -25,6 +25,8 @@
 #include <QKeyEvent>
 #include <QCoreApplication>
 #include <QAtomicInt>
+#include <QToolTip>
+#include <QString>
 
 #include "DropletGUIDefaults.h"
 #include "DropletGUIStructs.h"
@@ -317,6 +319,14 @@ protected:
 	*/
 
 	void processInput(float timeSinceLastUpdate);
+
+	/**
+	* \fn	void RenderWidget::mouseSelect ( int x, int y );
+	*
+	* \brief	Test if mouse clicked a droplet
+	*/
+
+	void mouseSelect ( QPoint location );
 
 	/**
 	* \fn	void RenderWidget::mouseMoveEvent ( QMouseEvent * event );
