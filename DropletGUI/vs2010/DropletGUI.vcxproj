@@ -224,8 +224,14 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\Assets\manifest.txt" />
+    <None Include="..\..\Assets\Shaders\CommonVertex.glsl" />
+    <None Include="..\..\Assets\Shaders\DebugFragment.glsl" />
+    <None Include="..\..\Assets\Shaders\DebugVertex.glsl" />
     <None Include="..\..\Assets\Shaders\dropletFrag.glsl" />
     <None Include="..\..\Assets\Shaders\dropletVert.glsl" />
+    <None Include="..\..\Assets\Shaders\ProjectorFragment.glsl" />
+    <None Include="..\..\Assets\Shaders\shaders.txt" />
+    <None Include="..\..\Assets\Shaders\TextureFragment.glsl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{2076F437-C2C5-4780-822B-2791F4F4E0FD}</ProjectGuid>
