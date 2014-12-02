@@ -1,7 +1,7 @@
 #droplet assets
 droplet_shader droplet
 droplet_projection projdroplet
-droplet_texture dropletTex
+droplet_texture dropletlayout
 droplet_mesh dropletTest
 
 
