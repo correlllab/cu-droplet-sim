@@ -1154,3 +1154,9 @@ float RenderWidget::getRandomf(float min, float max)
 	float range = max - min;
 	return (min + ((range * randNum) / RAND_MAX));
 }
+
+// based on http://www.lighthouse3d.com/tutorials/opengl-short-tutorials/opengl_framebuffer_objects/
+void RenderWidget::drawProjectionTexture() 
+{
+
+}

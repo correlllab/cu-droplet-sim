@@ -252,6 +252,14 @@ protected:
 	void drawObjects();
 
 	/**
+	* \fn	void RenderWidget::drawProjectionTexture();
+	*
+	* \brief	Draw texture to project onto table.
+	*/
+
+	void drawProjectionTexture();
+
+	/**
 	* \fn	void RenderWidget::timerEvent(QTimerEvent *event);
 	*
 	* \brief	timing control.
