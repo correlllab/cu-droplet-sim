@@ -3,6 +3,8 @@
 *
 * \brief	Implements the main portion of the RenderWidget class.
 */
+#include <iostream>
+#include <fstream>
 
 #include "RenderWidget.h"
 
@@ -68,6 +70,9 @@ RenderWidget::RenderWidget(const QGLFormat& format, QWidget *parent)
 	QTime time = QTime::currentTime();
 	qsrand((uint)time.msec());
 	_hudInfo.framesSinceLastUpdate = 99;
+
+	// fbo
+	initProjectionTexture(512,512);
 }
 
 RenderWidget::~RenderWidget()
@@ -1159,4 +1164,90 @@ float RenderWidget::getRandomf(float min, float max)
 void RenderWidget::drawProjectionTexture() 
 {
 
+}
+
+void RenderWidget::initProjectionTexture(int width, int height) 
+{
+	std::ofstream out("out.txt");
+	std::cout.rdbuf(out.rdbuf());
+	std::cout<<"\n\n...new run...\n\n"<<std::endl;
+
+	fbo = 1;
+	textureFBO = 0;
+	depthTexFBO = 0;
+
+	// prepare an FBO 512x512 with a single color attachment
+	glGenFramebuffers(1,&fbo);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+
+	createRGBATexture(width, height);
+	glFramebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, textureFBO, 0);
+
+	createDepthTexture(width, height);
+	glFramebufferTexture(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexFBO, 0);
+
+	GLenum e = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
+	switch (e) {
+	
+		case GL_FRAMEBUFFER_UNDEFINED:
+			std::cout<<"FBO Undefined\n"<<std::endl;
+			break;
+		case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT :
+			std::cout<<"FBO Incomplete Attachment\n"<<std::endl;
+			break;
+		case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT :
+			std::cout<<"FBO Missing Attachment\n"<<std::endl;
+			break;
+		case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER :
+			std::cout<<"FBO Incomplete Draw Buffer\n"<<std::endl;
+			break;
+		case GL_FRAMEBUFFER_UNSUPPORTED :
+			std::cout<<"FBO Unsupported\n"<<std::endl;
+			break;
+		case GL_FRAMEBUFFER_COMPLETE:
+			std::cout<<"FBO OK\n"<<std::endl;
+			break;
+		default:
+			std::cout<<"FBO Problem?\n"<<std::endl;
+	}
+	if (e != GL_FRAMEBUFFER_COMPLETE) 
+	{
+		exit(1);
+	}
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+	// TODO: add error checking & handling on e != GL_FRAMEBUFFER_COMPLETE
+}
+
+void RenderWidget::createRGBATexture(int width, int height) 
+{
+	std::cout<<"createRGBATexture"<<std::endl;
+	glGenTextures(1, &textureFBO);
+	glBindTexture(GL_TEXTURE_2D, textureFBO);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void RenderWidget::createDepthTexture(int width, int height) 
+{
+	std::cout<<"createDepthTexture"<<std::endl;
+	glGenTextures(1, &depthTexFBO);
+
+	glBindTexture(GL_TEXTURE_2D, depthTexFBO);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); 
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL); 
+
+	glBindTexture(GL_TEXTURE_2D, 0);
 }

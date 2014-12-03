@@ -183,7 +183,22 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\Assets\manifest.txt">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\Assets\Shaders\dropletFrag.glsl">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\..\Assets\Shaders\dropletVert.glsl">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
     <None Include="..\..\Assets\Shaders\CommonVertex.glsl">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\..\Assets\Shaders\cowFrag.glsl">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\..\Assets\Shaders\cowVert.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
     <None Include="..\..\Assets\Shaders\DebugFragment.glsl">
@@ -192,37 +207,13 @@
     <None Include="..\..\Assets\Shaders\DebugVertex.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="..\..\Assets\Shaders\DropletCommonVertex.glsl">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\..\Assets\Shaders\DropletFragment.glsl">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\..\Assets\Shaders\DropletTexFragment.glsl">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\..\Assets\Shaders\ProjDropletFragment.glsl">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
     <None Include="..\..\Assets\Shaders\ProjectorFragment.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
     <None Include="..\..\Assets\Shaders\shaders.txt">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="..\..\Assets\Shaders\SimpleFragment.glsl">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
     <None Include="..\..\Assets\Shaders\TextureFragment.glsl">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\..\Assets\manifest.txt">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\..\Assets\Shaders\dropletFrag.glsl">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\..\Assets\Shaders\dropletVert.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
   </ItemGroup>

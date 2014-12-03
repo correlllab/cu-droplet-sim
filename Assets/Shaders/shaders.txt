@@ -17,3 +17,6 @@ texture CommonVertex.glsl TextureFragment.glsl
 # TODO: projdroplet is redundant, redo shader setup so it's not needed.
 projtexture CommonVertex.glsl ProjectorFragment.glsl
 projdroplet dropletVert.glsl dropletFrag.glsl
+
+# cow shader!
+cow cowVert.glsl cowFrag.glsl

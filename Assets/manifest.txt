@@ -30,3 +30,8 @@ object_cube_shader texture
 object_cube_projection projtexture
 object_cube_texture cube
 object_cube_mesh cube
+
+object_cow_shader cow
+object_cow_projection cow
+object_cow_texture dropletTex
+object_cow_mesh cow

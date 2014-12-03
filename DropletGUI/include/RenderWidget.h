@@ -251,13 +251,7 @@ protected:
 
 	void drawObjects();
 
-	/**
-	* \fn	void RenderWidget::drawProjectionTexture();
-	*
-	* \brief	Draw texture to project onto table.
-	*/
 
-	void drawProjectionTexture();
 
 	/**
 	* \fn	void RenderWidget::timerEvent(QTimerEvent *event);
@@ -643,6 +637,26 @@ private:
 	*/
 
 	simRate_t _simRates;
+
+	// stuff for fbo
+	GLuint fbo;
+	GLuint textureFBO;
+	GLuint depthTexFBO;
+
+	QGLShaderProgram *vertShader;
+	QGLShaderProgram *fragShader;
+
+	MeshManager *cowMesh;
+
+	float cowAngle;
+
+	void drawProjectionTexture();
+
+	void initProjectionTexture(int width, int height);
+
+	void createRGBATexture(int width, int height);
+
+	void createDepthTexture(int width, int height);
 };
 
 #endif // RENDERWIDGET_H
