@@ -70,9 +70,6 @@ RenderWidget::RenderWidget(const QGLFormat& format, QWidget *parent)
 	QTime time = QTime::currentTime();
 	qsrand((uint)time.msec());
 	_hudInfo.framesSinceLastUpdate = 99;
-
-	// fbo
-	initProjectionTexture(512,512);
 }
 
 RenderWidget::~RenderWidget()
@@ -134,6 +131,9 @@ void RenderWidget::initializeGL()
 	//_runTime.start();
 	_updateTimer.start();
 	_timerID = startTimer(_targetFrameTime);
+
+	// fbo setup
+	initProjectionTexture(512,512);
 }	
 
 void RenderWidget::setFPS(int FPS)
@@ -553,6 +553,8 @@ void RenderWidget::drawDroplets()
 				glActiveTexture(GL_TEXTURE0);
 				currentTex0->bindTexture();
 			}
+
+			glBindTexture(GL_TEXTURE_2D,fbo);
 
 			foreach(dropletStruct_t droplet,_renderState.dropletData)
 			{
@@ -1163,22 +1165,29 @@ float RenderWidget::getRandomf(float min, float max)
 // based on http://www.lighthouse3d.com/tutorials/opengl-short-tutorials/opengl_framebuffer_objects/
 void RenderWidget::drawProjectionTexture() 
 {
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+	glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
 
+	GLuint attachments[1] = {GL_COLOR_ATTACHMENT0};
+	glDrawBuffers(1, attachments);
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	drawDroplets();
+
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 }
 
 void RenderWidget::initProjectionTexture(int width, int height) 
 {
-	std::ofstream out("out.txt");
+	// redirect cout
+	std::ofstream out("fbo.log");
 	std::cout.rdbuf(out.rdbuf());
-	std::cout<<"\n\n...new run...\n\n"<<std::endl;
+	std::cout<<"initialize projection frame buffer object"<<std::endl;
 
-	fbo = 1;
-	textureFBO = 0;
-	depthTexFBO = 0;
-
-	// prepare an FBO 512x512 with a single color attachment
-	glGenFramebuffers(1,&fbo);
+	glGenFramebuffers(1, &fbo);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER,0);
 
 	createRGBATexture(width, height);
 	glFramebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, textureFBO, 0);
@@ -1210,27 +1219,24 @@ void RenderWidget::initProjectionTexture(int width, int height)
 		default:
 			std::cout<<"FBO Problem?\n"<<std::endl;
 	}
-	if (e != GL_FRAMEBUFFER_COMPLETE) 
-	{
-		exit(1);
-	}
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
-	// TODO: add error checking & handling on e != GL_FRAMEBUFFER_COMPLETE
+
+
 }
 
 void RenderWidget::createRGBATexture(int width, int height) 
 {
 	std::cout<<"createRGBATexture"<<std::endl;
 	glGenTextures(1, &textureFBO);
+
 	glBindTexture(GL_TEXTURE_2D, textureFBO);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL); 
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
