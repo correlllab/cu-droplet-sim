@@ -11,6 +11,7 @@
 RenderWidget::RenderWidget(const QGLFormat& format, QWidget *parent)
 	: QGLWidget(format, parent)
 {
+	std::cout<<"RenderWidget"<<std::endl;
 	assets.setAssetDir(DEFAULT_ASSETDIR);
 	assets.setShaderDir(DEFAULT_SHADERDIR);
 	assets.setMeshDir(DEFAULT_MESHDIR);
@@ -105,6 +106,7 @@ QSize RenderWidget::sizeHint() const
 
 void RenderWidget::initializeGL()
 {
+	std::cout<<"initializeGL"<<std::endl;
 	ogl_LoadFunctions();
 
 	// depth testing and culling
@@ -306,20 +308,6 @@ void RenderWidget::paintGL()
 		drawDroplets();
 		drawObjects();
 
-		// simple texture that is updated programmatically
-		if (is_active==1)
-		{
-			updateBlob();
-		}
-			drawProjectionTexture(activeTextureWidth,activeTextureHeight);
-
-			glActiveTexture(GL_TEXTURE2);
-			glBindTexture(GL_TEXTURE_2D, fbo);
-			glActiveTexture(GL_TEXTURE0);
-		
-		
-
-
 		if (_arena.projecting && _projectionTexture.valid)
 		{
 			glActiveTexture(GL_TEXTURE1);
@@ -346,6 +334,16 @@ void RenderWidget::paintGL()
 		}
 		_renderLock = false;
 	}
+
+		// simple texture that is updated programmatically
+		if (is_active==1)
+		{
+			updateBlob();
+			drawProjectionTexture(activeTextureWidth,activeTextureHeight);
+		}
+		
+
+
 }
 
 void RenderWidget::drawDroplets()
@@ -453,10 +451,10 @@ void RenderWidget::drawDroplets()
 			currentMesh->disableAttributeArrays();
 			currentMesh->unbindBuffer();
 			currentShader->release();
-			//glActiveTexture(GL_TEXTURE0); // whay are textures bound and activated at the end?
-			//glBindTexture(GL_TEXTURE_2D,0);
+			glActiveTexture(GL_TEXTURE0); // whay are textures bound and activated at the end?
+			glBindTexture(GL_TEXTURE_2D,0);
 		}
-		//glActiveTexture(GL_TEXTURE0);
+		glActiveTexture(GL_TEXTURE0);
 	}
 }
 
@@ -1052,20 +1050,26 @@ void RenderWidget::drawProjectionTexture(int width, int height)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
+	glBufferData(GL_ARRAY_BUFFER, 42*sizeof(float), vertices, GL_STATIC_DRAW);
+
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, fbo);
+	glActiveTexture(GL_TEXTURE0);
+
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 14);
 	glDisableVertexAttribArray(0);
 
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glViewport(0,0,windowWidth,windowHeight);
 }
 
 void RenderWidget::initTestBlob()
 {
-	GLuint VertexArrayID;
-	glGenVertexArrays(1, &VertexArrayID);
-	glBindVertexArray(VertexArrayID);
+	//GLuint VertexArrayID;
+	//glGenVertexArrays(1, &VertexArrayID);
+	//glBindVertexArray(VertexArrayID);
 
 	// set center of fan
 	for (int i = 0; i < 3; i++) 
@@ -1097,11 +1101,8 @@ void RenderWidget::initTestBlob()
 	vertices[41] = vertices[5];
 
 	glGenBuffers(1, &vertexVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
-	glBufferData(GL_ARRAY_BUFFER, 42*sizeof(float), vertices, GL_STATIC_DRAW);
-
-
-
+	//glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
+	//glBufferData(GL_ARRAY_BUFFER, 42*sizeof(float), vertices, GL_STATIC_DRAW);
 }
 
 void RenderWidget::updateBlob()
@@ -1140,8 +1141,8 @@ void RenderWidget::updateBlob()
 	vertices[40] = vertices[4];
 	vertices[41] = vertices[5];
 
-	glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
-	glBufferData(GL_ARRAY_BUFFER, 42*sizeof(float), vertices, GL_STATIC_DRAW);
+	//glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
+	//glBufferData(GL_ARRAY_BUFFER, 42*sizeof(float), vertices, GL_STATIC_DRAW);
 }
 
 void RenderWidget::initProjectionTexture(int width, int height) 
@@ -1156,7 +1157,7 @@ void RenderWidget::initProjectionTexture(int width, int height)
 	glFramebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, textureFBO, 0);
 
 	createDepthTexture(width, height);
-	glFramebufferTexture(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexFBO, 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexFBO, 0);
 
 	GLenum e = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
 	switch (e) {
@@ -1185,7 +1186,6 @@ void RenderWidget::initProjectionTexture(int width, int height)
 
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER,0);
 	initTestBlob();
-	drawProjectionTexture(width,height);
 }
 
 void RenderWidget::createRGBATexture(int width, int height) 
