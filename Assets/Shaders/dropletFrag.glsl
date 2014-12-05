@@ -25,6 +25,7 @@ void main()
 	vec4 tex_Color = texture2D(objectTexture,texCoords_0);
 	vec4 proj_Color = vec4(0.0);
 	float Ip = 0.0;
+	float percentColored = 0.6;
 
 	vec3 N = normalize(Normal.xyz);
 	vec3 L = normalize(Light);
@@ -33,12 +34,14 @@ void main()
 
 	if (is_projecting==1) 
 	{
+		percentColored = 0.5;
 		Ip = max(dot(N,normalize(Proj.xyz)) , 0.0);
 		proj_Color=texture2D(projectionTexture,texCoords_1);
 	} 
 
 	if (is_activeTexture==1)
 	{
+		percentColored = 0.5;
 		Ip = max(dot(N,normalize(Proj.xyz)) , 0.0);
 		proj_Color=texture2D(activeTexture,texCoords_1);
 	}
@@ -63,11 +66,18 @@ void main()
 		emission.z=ledColor.z;
 	}
 
+	if (height>0.85)
+	{
+		emission.x=ledColor.x*(0.92-height)/0.07;
+		emission.y=ledColor.y*(0.92-height)/0.07;
+		emission.z=ledColor.z*(0.92-height)/0.07;
+	}
+
 	// TODO: get these parameters from the light source object
 	fragColor = (emission // led glow
 				+ vec4(0.3,0.3,0.3,1.0) // ambient lighting
 				+ Id * vec4(0.5,0.5,0.5,1.0)) // diffuse lighting
 				//+ Is * vec4(0.1,0.1,0.1,1.0)) // specular lighting
-				* (tex_Color)
-				+ Ip * proj_Color; // overlay projection texture
+				* (tex_Color) * percentColored
+				+ Ip * proj_Color * (1-percentColored); // overlay projection texture
 }
