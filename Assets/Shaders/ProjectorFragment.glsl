@@ -4,6 +4,9 @@
 
 uniform sampler2D objectTexture; //The texture of the object
 uniform sampler2D projectionTexture; //The texture holding the projected image
+uniform sampler2D activeTexture; // programatically controlled projection texture
+uniform int is_activeTexture;
+uniform int is_projecting;
 
 //To fragment shader
 out vec4 out_Color;
@@ -18,14 +21,22 @@ in vec3 directionalColor;
 in vec3 ambientColor;
 
 
+
 void main()
 {
 
 	vec4 tex_Color = texture2D(objectTexture,texCoords_0);
 	vec4 proj_Color = vec4(0.0);
-	if (all(greaterThanEqual(texCoords_1,vec2(0.0)))&&all(lessThanEqual(texCoords_1,vec2(1.0))))
-		proj_Color = texture2D(projectionTexture,texCoords_1);
+	//if (all(greaterThanEqual(texCoords_1,vec2(0.0)))&&all(lessThanEqual(texCoords_1,vec2(1.0))))
+		if (is_projecting==1) 
+		{
+			proj_Color = texture2D(projectionTexture,texCoords_1);
+		}
 
+		if (is_activeTexture==1)
+		{
+			proj_Color = texture2D(activeTexture,texCoords_1);
+		}
 	vec3 transformedNormal = normalize(normal);
 	float directionalLightWeighting = max(dot(transformedNormal, normalize(transformedLightingDirection)), 0.0);
 	float projLightWeighting = max(dot(transformedNormal,normalize(transformedProjDirection)),0.0);

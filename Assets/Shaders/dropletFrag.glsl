@@ -14,7 +14,9 @@ in vec2 texCoords_1; // projection texture coords
 
 uniform sampler2D objectTexture; //Texture on the Droplet
 uniform sampler2D projectionTexture; //Image to be projected (treat like a directional light?)
+uniform sampler2D activeTexture;
 uniform int is_projecting;
+uniform int is_activeTexture;
 
 out vec4 fragColor; // output color
 
@@ -34,6 +36,12 @@ void main()
 		Ip = max(dot(N,normalize(Proj.xyz)) , 0.0);
 		proj_Color=texture2D(projectionTexture,texCoords_1);
 	} 
+
+	if (is_activeTexture==1)
+	{
+		Ip = max(dot(N,normalize(Proj.xyz)) , 0.0);
+		proj_Color=texture2D(activeTexture,texCoords_1);
+	}
 
 	// intensity of diffuse and specular light, 
 	// 8 = max shininess

@@ -1,9 +1,3 @@
-# TODO: remove code that sets these up since they're not used anymore
-# droplet DropletCommonVertex.glsl DropletTexFragment.glsl
-# simple CommonVertex.glsl SimpleFragment.glsl
-# projdroplet DropletCommonVertex.glsl ProjDropletFragment.glsl
-# simpledroplet DropletCommonVertex.glsl DropletFragment.glsl
-
 # simple vertex shader for debugging drawing issues
 debug DebugVertex.glsl DebugFragment.glsl
 
@@ -11,12 +5,5 @@ debug DebugVertex.glsl DebugFragment.glsl
 droplet dropletVert.glsl dropletFrag.glsl
 
 # per-pixel lighting for the arena
-texture CommonVertex.glsl TextureFragment.glsl
+texture CommonVertex.glsl ProjectorFragment.glsl
 
-# projected shaders
-# TODO: projdroplet is redundant, redo shader setup so it's not needed.
-projtexture CommonVertex.glsl ProjectorFragment.glsl
-projdroplet dropletVert.glsl dropletFrag.glsl
-
-# cow shader!
-cow cowVert.glsl cowFrag.glsl

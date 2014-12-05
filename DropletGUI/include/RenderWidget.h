@@ -639,6 +639,11 @@ private:
 	simRate_t _simRates;
 
 	// stuff for fbo
+	int activeTextureWidth;
+	int activeTextureHeight;
+	int windowWidth;
+	int windowHeight;
+
 	GLuint fbo;
 	GLuint textureFBO;
 	GLuint depthTexFBO;
@@ -650,13 +655,23 @@ private:
 
 	float cowAngle;
 
-	void drawProjectionTexture();
+	void drawProjectionTexture(int width, int height);
 
 	void initProjectionTexture(int width, int height);
 
 	void createRGBATexture(int width, int height);
 
 	void createDepthTexture(int width, int height);
+
+	void initTestBlob();
+	void updateBlob();
+
+	int is_active;
+
+	GLfloat vertices[42];
+	GLfloat r[14];
+	GLfloat velocity[14];
+	GLuint vertexVBO;
 };
 
 #endif // RENDERWIDGET_H
