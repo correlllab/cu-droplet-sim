@@ -1,8 +1,8 @@
 #droplet assets
 droplet_shader droplet
 droplet_projection droplet
-droplet_texture dropletTex
-droplet_mesh HQDroplet
+droplet_texture dropletlayout
+droplet_mesh dropletTest
 
 
 #wall assets
