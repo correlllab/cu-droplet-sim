@@ -195,6 +195,12 @@
     <None Include="..\..\Assets\Shaders\CommonVertex.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
+    <None Include="..\..\Assets\Shaders\cowFrag.glsl">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\..\Assets\Shaders\cowVert.glsl">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
     <None Include="..\..\Assets\Shaders\DebugFragment.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>

@@ -225,6 +225,8 @@
   <ItemGroup>
     <None Include="..\..\Assets\manifest.txt" />
     <None Include="..\..\Assets\Shaders\CommonVertex.glsl" />
+    <None Include="..\..\Assets\Shaders\cowFrag.glsl" />
+    <None Include="..\..\Assets\Shaders\cowVert.glsl" />
     <None Include="..\..\Assets\Shaders\DebugFragment.glsl" />
     <None Include="..\..\Assets\Shaders\DebugVertex.glsl" />
     <None Include="..\..\Assets\Shaders\dropletFrag.glsl" />
@@ -405,6 +407,7 @@ xcopy "$(QTDIR)\bin\QtOpenGLd4.dll" "$(SolutionDir)bin\" /Y</Command>
       <Optimization>MaxSpeed</Optimization>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <CompileAsManaged>false</CompileAsManaged>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(QTDIR)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
