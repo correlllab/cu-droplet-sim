@@ -3,6 +3,8 @@
 *
 * \brief	Implements the main portion of the RenderWidget class.
 */
+#include <iostream>
+#include <fstream>
 
 #include "RenderWidget.h"
 
@@ -68,6 +70,10 @@ RenderWidget::RenderWidget(const QGLFormat& format, QWidget *parent)
 	QTime time = QTime::currentTime();
 	qsrand((uint)time.msec());
 	_hudInfo.framesSinceLastUpdate = 99;
+
+	activeTextureWidth=1000;
+	activeTextureHeight=1000;
+	is_active=0;
 }
 
 RenderWidget::~RenderWidget()
@@ -99,7 +105,6 @@ QSize RenderWidget::sizeHint() const
 
 void RenderWidget::initializeGL()
 {
-
 	ogl_LoadFunctions();
 
 	// depth testing and culling
@@ -129,6 +134,9 @@ void RenderWidget::initializeGL()
 	//_runTime.start();
 	_updateTimer.start();
 	_timerID = startTimer(_targetFrameTime);
+
+	// fbo setup
+	initProjectionTexture(activeTextureWidth,activeTextureHeight);
 }	
 
 void RenderWidget::setFPS(int FPS)
@@ -159,6 +167,8 @@ void RenderWidget::resizeGL(int width, int height)
 	_camera.projectionMatrix.setToIdentity();
 	_camera.projectionMatrix.perspective(60.0, (float) width / (float) height, 1, 1000);
 	glViewport(0, 0, width, height);
+	windowWidth = width;
+	windowHeight = height;
 }
 
 void RenderWidget::updateCamera()
@@ -250,7 +260,7 @@ void RenderWidget::paintGL()
 		// release resource
 		_simStateLock.fetchAndStoreOrdered(0);
 
-
+		glClearColor(0.0,0.0,0.0,1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		if (_renderDebug > 1)
@@ -265,6 +275,7 @@ void RenderWidget::paintGL()
 				glDeleteTextures(1,&_projectionTexture.handle);
 			}
 			glGenTextures(1,&_projectionTexture.handle);
+			std::cout<<"paintGL: _projectionTexture.handle = "<<_projectionTexture.handle<<std::endl;
 			_projectionTexture.valid = true;
 		}
 
@@ -294,7 +305,20 @@ void RenderWidget::paintGL()
 
 		drawDroplets();
 		drawObjects();
+
+		// simple texture that is updated programmatically
+		if (is_active==1)
+		{
+			updateBlob();
+		}
+			drawProjectionTexture(activeTextureWidth,activeTextureHeight);
+
+			glActiveTexture(GL_TEXTURE2);
+			glBindTexture(GL_TEXTURE_2D, fbo);
+			glActiveTexture(GL_TEXTURE0);
 		
+		
+
 
 		if (_arena.projecting && _projectionTexture.valid)
 		{
@@ -324,158 +348,6 @@ void RenderWidget::paintGL()
 	}
 }
 
-
-void RenderWidget::drawArena()
-{
-	QGLShaderProgram *currentShader = NULL;
-	MeshManager *currentMesh = NULL;
-	TextureManager *currentTex0 = NULL;
-
-	GLint lLoc, cLoc, mLoc;
-	GLint t0Loc,t1Loc;
-	GLint pLoc;
-
-	float floorWidth = _arena.tileLength * _arena.numColTiles;
-	float floorLength = _arena.tileLength * _arena.numRowTiles;
-	glm::vec2 lengths = glm::vec2(floorWidth,floorLength);		
-
-	// for every object in the arena 
-	foreach(renderStruct_t object,_arenaObjects)
-	{
-		// new variables
-		QGLShaderProgram *newShader;
-		MeshManager *newMesh;
-		TextureManager *newTex0;
-
-		/* set current render object shader, mesh, and textures */
-		// Check if visual debugging is on
-		if (_renderDebug > 1)
-		{
-			// if debugging is on, use the debug assets instead of checking the object properties
-			newShader = assets.getShader(DEBUG_SHADER);
-			newMesh = assets.getMesh(DEBUG_MESH);
-			newTex0 = NULL;
-		} else
-		{
-			// if not debugging set new variables to object properties
-			if (_arena.projecting)
-			{
-				newShader = object.projShader;
-
-			} else {
-				newShader = object.baseShader;
-			}
-			newMesh = object.mesh;
-			newTex0 = object.texture_0;
-
-		}
-
-
-		/* compare existing state to new state */
-
-		// rebind shaders
-		if (currentShader != newShader)
-		{
-			// release the current shader if bound
-			if (currentShader != NULL)
-			{
-				currentShader->release();
-			}
-			currentShader = newShader;
-			// bind uniform attributes
-			if (currentShader != NULL)
-			{
-				currentShader->bind();
-				currentShader->setUniformValue("in_Projection",_camera.projectionMatrix);
-				// set to (1,1,3)
-				currentShader->setUniformValue("in_View",_camera.viewMatrix);
-				lLoc = currentShader->uniformLocation("in_lightDir");
-				glUniform3fv(lLoc,1,glm::value_ptr(_camera.lightDir));
-				cLoc = currentShader->uniformLocation("in_Color");
-				mLoc = currentShader->uniformLocation("in_Model");
-				t0Loc = currentShader->uniformLocation("objectTexture");
-				t1Loc = currentShader->uniformLocation("projectionTexture");
-				pLoc = currentShader->uniformLocation("in_ProjOffsets");
-				glUniform2fv(pLoc,1,glm::value_ptr(lengths));
-				glUniform1i(t0Loc,0);
-				glUniform1i(t1Loc,1);
-			}
-		}
-
-		// test and rebind texture 0
-		if (currentTex0 != newTex0)
-		{
-			glActiveTexture(GL_TEXTURE0);
-
-			if (currentTex0 != NULL)
-				currentTex0->unbindTexture();
-			currentTex0 = newTex0;
-
-			if (currentTex0 != NULL)
-			{
-				currentTex0->bindTexture();
-			}
-		}
-
-
-
-
-		// test and rebind mesh
-		if (currentMesh != newMesh)
-		{
-			if (currentMesh != NULL)
-			{
-				currentMesh->disableAttributeArrays();
-				currentMesh->unbindBuffer();
-			}
-
-			currentMesh = newMesh;
-
-			if (currentMesh != NULL)
-			{
-				currentMesh->bindBuffer();
-				currentMesh->enableAttributeArrays();
-			}
-		}
-
-		/* now that all properties are bound, draw */
-
-		// error testing
-		if (currentShader != NULL && currentMesh != NULL)
-		{
-			// bind color and model matrix uniforms
-			glUniform4fv(cLoc,1,glm::value_ptr(object.color));
-			glUniformMatrix4fv(mLoc,1,GL_FALSE,glm::value_ptr(object.modelMatrix));
-
-			// draw
-			currentMesh->draw();
-		}
-
-	} // end foreach
-
-	/* all objects are rendered, so unbind all assets */
-
-	if (currentShader != NULL)
-	{
-		currentShader->release();
-	}
-
-	if (currentMesh != NULL)
-	{
-		currentMesh->disableAttributeArrays();
-		currentMesh->unbindBuffer();
-	}
-
-
-	if (currentTex0 != NULL)
-	{
-		glActiveTexture(GL_TEXTURE0);
-		currentTex0->unbindTexture();
-	}
-
-}
-
-
 void RenderWidget::drawDroplets()
 {
 	if (_renderState.dropletData.count() > 0)
@@ -493,8 +365,8 @@ void RenderWidget::drawDroplets()
 		GLint projectionOffsetsLocation;
 		GLint projectorPositionLocation;
 		GLint is_projectingLocation;
-		GLint is_projecting;
-		
+		GLint is_activeLocation;
+		GLint activeTextureLocation;
 		glActiveTexture(GL_TEXTURE0);
 
 		// choose the shader to use: debug or normal
@@ -523,15 +395,20 @@ void RenderWidget::drawDroplets()
 			projectorPositionLocation = currentShader->uniformLocation("projectorPosition");
 			is_projectingLocation = currentShader->uniformLocation("is_projecting");
 			objectTextureLocation = currentShader->uniformLocation("objectTexture");
-			
+			is_activeLocation = currentShader->uniformLocation("is_activeTexture");
+			activeTextureLocation = currentShader->uniformLocation("activeTexture");
+
 			// set shader variables for all droplets
 			glUniform4fv(projectorPositionLocation,1,glm::value_ptr(_projector.position));
 			glUniform1i(is_projectingLocation,(GLint)_arena.projecting);
+			glUniform1i(is_activeLocation,is_active);
 			glUniform4fv(lightPositionLocation,1,glm::value_ptr(_lightSource.position));
 			glUniform1i(objectTextureLocation,0);
 			glUniform1i(projectionTextureLocation,1);
 			currentShader->setUniformValue("in_Projection",_camera.projectionMatrix);
 			currentShader->setUniformValue("in_View",_camera.viewMatrix);
+			glUniform1i(activeTextureLocation,2);
+			glUniform1i(is_activeLocation,is_active);
 
 			// pass shader information to calculate projected texture
 			float floorWidth = _arena.tileLength * _arena.numColTiles;
@@ -594,7 +471,10 @@ void RenderWidget::drawObjects()
 		GLint lLoc, cLoc, mLoc;
 		GLint t0Loc,t1Loc;
 		GLint pLoc;
+		GLint activeTextureLocation;
+		GLint is_activeLocation;
 
+		GLint is_projectingLocation;
 
 		glActiveTexture(GL_TEXTURE0);
 
@@ -620,16 +500,17 @@ void RenderWidget::drawObjects()
 				newShader = assets.getShader(DEBUG_SHADER);
 				newTex0 = NULL;
 
-			} else
+			} 
+			else
 			{
 				// if not debugging set new variables to object properties
-				if (_arena.projecting)
-				{
-					newShader = _objectStructs[object.oType].projShader;
-				} else {
+				//if (_arena.projecting)
+				//{
+				//	newShader = _objectStructs[object.oType].projShader;
+				//} else {
 					newShader = _objectStructs[object.oType].baseShader;
 
-				}
+				//}
 				newTex0 = _objectStructs[object.oType].texture_0;
 			}
 
@@ -659,10 +540,16 @@ void RenderWidget::drawObjects()
 					mLoc = currentShader->uniformLocation("in_Model");
 					t0Loc = currentShader->uniformLocation("objectTexture");
 					t1Loc = currentShader->uniformLocation("projectionTexture");
+					is_activeLocation = currentShader->uniformLocation("is_activeTexture");
+					is_projectingLocation = currentShader->uniformLocation("is_projecting");
+					activeTextureLocation = currentShader->uniformLocation("activeTexture");
 					pLoc = currentShader->uniformLocation("in_ProjOffsets");
 					glUniform2fv(pLoc,1,glm::value_ptr(lengths));
 					glUniform1i(t0Loc,0);
 					glUniform1i(t1Loc,1);
+					glUniform1i(activeTextureLocation,2);
+					glUniform1i(is_activeLocation,is_active);
+					glUniform1i(is_projectingLocation,(GLint)_arena.projecting);
 				}
 			}
 
@@ -1153,4 +1040,185 @@ float RenderWidget::getRandomf(float min, float max)
 	uint randNum = rand();
 	float range = max - min;
 	return (min + ((range * randNum) / RAND_MAX));
+}
+
+// based on http://www.lighthouse3d.com/tutorials/opengl-short-tutorials/opengl_framebuffer_objects/
+void RenderWidget::drawProjectionTexture(int width, int height) 
+{
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+	glViewport(0,0,width,height);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 14);
+	glDisableVertexAttribArray(0);
+
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	glViewport(0,0,windowWidth,windowHeight);
+}
+
+void RenderWidget::initTestBlob()
+{
+	GLuint VertexArrayID;
+	glGenVertexArrays(1, &VertexArrayID);
+	glBindVertexArray(VertexArrayID);
+
+	// set center of fan
+	for (int i = 0; i < 3; i++) 
+	{
+		vertices[i] = 0.0f;
+	}
+
+	// set remaining with random radius 0.25 < r < 0.9
+	float alpha = 0;
+	int index=1;
+	r[0]=0;
+	velocity[0]=0;
+	for (int i = 3; i < 39; i+=3) 
+	{
+		r[index] = getRandomf(0.25,0.9);
+		velocity[index]=getRandomf(-1.0, 1.0);
+
+		vertices[i] = cos(alpha)*r[index];
+		vertices[i + 1] = sin(alpha)*r[index];
+		vertices[i + 2] = 0.0f;
+
+		alpha-=0.5235988; // 30 degrees
+		index+=1;
+	}
+
+	// set last fan to overlap first
+	vertices[39] = vertices[3];
+	vertices[40] = vertices[4];
+	vertices[41] = vertices[5];
+
+	glGenBuffers(1, &vertexVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
+	glBufferData(GL_ARRAY_BUFFER, 42*sizeof(float), vertices, GL_STATIC_DRAW);
+
+
+
+}
+
+void RenderWidget::updateBlob()
+{
+	for (int i=1; i<13; i++) 
+	{
+		r[i]+=velocity[i]/50.0;
+		if (r[i]>0.9) 
+		{
+			r[i]=0.9;
+			velocity[i]*=-1.0;
+		}
+		if (r[i]<0.25) 
+		{
+			r[i]=0.25;
+			velocity[i]*=-1.0;
+		}
+		if (getRandomf(0.0,1.0)<0.10) velocity[i]=getRandomf(-1.0,1.0);
+	}
+	r[13]=r[1];
+	velocity[13]=velocity[1];
+
+	int index=1;
+	float alpha = 0;
+	for (int i = 3; i < 39; i+=3) 
+	{
+		vertices[i] = cos(alpha)*r[index];
+		vertices[i + 1] = sin(alpha)*r[index];
+		vertices[i + 2] = 0.0f;
+
+		alpha-=0.5235988; // 30 degrees
+		index+=1;
+	}
+
+	vertices[39] = vertices[3];
+	vertices[40] = vertices[4];
+	vertices[41] = vertices[5];
+
+	glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
+	glBufferData(GL_ARRAY_BUFFER, 42*sizeof(float), vertices, GL_STATIC_DRAW);
+}
+
+void RenderWidget::initProjectionTexture(int width, int height) 
+{
+
+	glGenFramebuffers(1, &fbo);
+	std::cout<<"fbo = "<<fbo<<std::endl;
+
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+
+	createRGBATexture(width, height);
+	glFramebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, textureFBO, 0);
+
+	createDepthTexture(width, height);
+	glFramebufferTexture(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexFBO, 0);
+
+	GLenum e = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
+	switch (e) {
+	
+		case GL_FRAMEBUFFER_UNDEFINED:
+			std::cout<<"FBO Undefined\n"<<std::endl;
+			break;
+		case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT :
+			std::cout<<"FBO Incomplete Attachment\n"<<std::endl;
+			break;
+		case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT :
+			std::cout<<"FBO Missing Attachment\n"<<std::endl;
+			break;
+		case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER :
+			std::cout<<"FBO Incomplete Draw Buffer\n"<<std::endl;
+			break;
+		case GL_FRAMEBUFFER_UNSUPPORTED :
+			std::cout<<"FBO Unsupported\n"<<std::endl;
+			break;
+		case GL_FRAMEBUFFER_COMPLETE:
+			std::cout<<"FBO OK\n"<<std::endl;
+			break;
+		default:
+			std::cout<<"FBO Problem?\n"<<std::endl;
+	}
+
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER,0);
+	initTestBlob();
+	drawProjectionTexture(width,height);
+}
+
+void RenderWidget::createRGBATexture(int width, int height) 
+{
+	std::cout<<"createRGBATexture"<<std::endl;
+	glGenTextures(1, &textureFBO);
+	std::cout<<"textureFBO = "<<textureFBO<<std::endl;
+
+	glBindTexture(GL_TEXTURE_2D, textureFBO);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); 
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL); 
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void RenderWidget::createDepthTexture(int width, int height) 
+{
+	std::cout<<"createDepthTexture"<<std::endl;
+	glGenTextures(1, &depthTexFBO);
+	std::cout<<"depthTexFBO = "<<depthTexFBO<<std::endl;
+	glBindTexture(GL_TEXTURE_2D, depthTexFBO);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); 
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL); 
+
+	glBindTexture(GL_TEXTURE_2D, 0);
 }

@@ -166,7 +166,10 @@ void RenderWidget::mouseSelect (QPoint location)
 				nearestId = droplet.dropletID;
 				distanceToNearestDroplet = distanceToScreen;
 				toolTipText = QString("id = %1\nTODO: something cool!").arg(droplet.dropletID);
+				location.setX(location.x()+this->x());
+				location.setY(location.y()+this->y());
 				QToolTip::showText(location, toolTipText);
+				
 			}
 		}
 	}
@@ -315,6 +318,12 @@ void RenderWidget::keyPressEvent(QKeyEvent *event)
 	{
 		if (_simRates.limitRate)
 			emit increaseRate();
+	}
+
+	if(event->key() == Qt::Key_O)
+	{
+		is_active+=1;
+		is_active%=2;
 	}
 }
 
