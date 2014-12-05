@@ -241,7 +241,7 @@ protected:
 	* \brief	Draw droplets.
 	*/
 
-	void drawDroplets();
+	void drawDroplets(bool drawGlow);
 
 	/**
 	* \fn	void RenderWidget::drawObjects();
@@ -643,35 +643,37 @@ private:
 	int activeTextureHeight;
 	int windowWidth;
 	int windowHeight;
+	int is_active;
 
 	GLuint fbo;
 	GLuint textureFBO;
 	GLuint depthTexFBO;
 
-	QGLShaderProgram *vertShader;
-	QGLShaderProgram *fragShader;
-
-	MeshManager *cowMesh;
-
-	float cowAngle;
-
 	void drawProjectionTexture(int width, int height);
-
 	void initProjectionTexture(int width, int height);
-
 	void createRGBATexture(int width, int height);
-
 	void createDepthTexture(int width, int height);
-
 	void initTestBlob();
 	void updateBlob();
-
-	int is_active;
 
 	GLfloat vertices[42];
 	GLfloat r[14];
 	GLfloat velocity[14];
 	GLuint vertexVBO;
+
+	// stuff for super awesome glow effect
+	int glowWidth;
+	int glowHeight;
+
+	GLuint glowFBO;
+	GLuint glowTextureFBO;
+	GLuint glowDepthTexFBO;
+
+	QGLShaderProgram *glowVertShader;
+	QGLShaderProgram *glowFragShader;
+
+	void initGlowFBO(int width, int height);
+	void drawGlowFBO(int width, int height);
 };
 
 #endif // RENDERWIDGET_H

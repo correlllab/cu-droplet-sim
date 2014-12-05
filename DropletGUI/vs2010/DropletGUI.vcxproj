@@ -229,6 +229,8 @@
     <None Include="..\..\Assets\Shaders\DebugVertex.glsl" />
     <None Include="..\..\Assets\Shaders\dropletFrag.glsl" />
     <None Include="..\..\Assets\Shaders\dropletVert.glsl" />
+    <None Include="..\..\Assets\Shaders\glowFrag.glsl" />
+    <None Include="..\..\Assets\Shaders\glowVert.glsl" />
     <None Include="..\..\Assets\Shaders\ProjectorFragment.glsl" />
     <None Include="..\..\Assets\Shaders\shaders.txt" />
   </ItemGroup>

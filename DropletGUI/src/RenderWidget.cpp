@@ -139,6 +139,7 @@ void RenderWidget::initializeGL()
 
 	// fbo setup
 	initProjectionTexture(activeTextureWidth,activeTextureHeight);
+	initGlowFBO(1024,1024);
 }	
 
 void RenderWidget::setFPS(int FPS)
@@ -305,8 +306,8 @@ void RenderWidget::paintGL()
 			}
 		}
 
-		drawDroplets();
-		drawObjects();
+		drawDroplets(true);
+		//drawObjects();
 
 		if (_arena.projecting && _projectionTexture.valid)
 		{
@@ -346,7 +347,7 @@ void RenderWidget::paintGL()
 
 }
 
-void RenderWidget::drawDroplets()
+void RenderWidget::drawDroplets(bool drawGlow)
 {
 	if (_renderState.dropletData.count() > 0)
 	{
@@ -375,7 +376,8 @@ void RenderWidget::drawDroplets()
 		} 
 		else
 		{
-			currentShader = _dropletStruct.baseShader;
+			if (drawGlow) currentShader = _dropletStruct.projShader;
+			else currentShader = _dropletStruct.baseShader;
 			currentTex0 = _dropletStruct.texture_0;
 		}
 
@@ -1221,4 +1223,73 @@ void RenderWidget::createDepthTexture(int width, int height)
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL); 
 
 	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void RenderWidget::initGlowFBO(int width, int height) 
+{
+	glGenFramebuffers(1, &glowFBO);
+
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, glowFBO);
+
+	glGenTextures(1, &glowTextureFBO);
+
+	glBindTexture(GL_TEXTURE_2D, glowTextureFBO);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); 
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL); 
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	glFramebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, glowTextureFBO, 0);
+
+
+	glGenTextures(1, &glowDepthTexFBO);
+	glBindTexture(GL_TEXTURE_2D, glowDepthTexFBO);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); 
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL); 
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, glowDepthTexFBO, 0);
+
+	GLenum e = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
+	switch (e) {
+	
+		case GL_FRAMEBUFFER_UNDEFINED:
+			std::cout<<"FBO Undefined\n"<<std::endl;
+			break;
+		case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT :
+			std::cout<<"FBO Incomplete Attachment\n"<<std::endl;
+			break;
+		case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT :
+			std::cout<<"FBO Missing Attachment\n"<<std::endl;
+			break;
+		case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER :
+			std::cout<<"FBO Incomplete Draw Buffer\n"<<std::endl;
+			break;
+		case GL_FRAMEBUFFER_UNSUPPORTED :
+			std::cout<<"FBO Unsupported\n"<<std::endl;
+			break;
+		case GL_FRAMEBUFFER_COMPLETE:
+			std::cout<<"FBO OK\n"<<std::endl;
+			break;
+		default:
+			std::cout<<"FBO Problem?\n"<<std::endl;
+	}
+
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER,0);
+}
+
+void RenderWidget::drawGlowFBO(int width, int height)
+{
+
 }

@@ -7,3 +7,5 @@ droplet dropletVert.glsl dropletFrag.glsl
 # per-pixel lighting for the arena
 texture CommonVertex.glsl ProjectorFragment.glsl
 
+# glow shader
+glow glowVert.glsl glowFrag.glsl
