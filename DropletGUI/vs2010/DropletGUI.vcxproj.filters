@@ -213,5 +213,11 @@
     <None Include="..\..\Assets\Shaders\glowVert.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
+    <None Include="..\..\Assets\Shaders\quadFrag.glsl">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\..\Assets\Shaders\quadVert.glsl">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

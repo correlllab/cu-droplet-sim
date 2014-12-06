@@ -1,6 +1,6 @@
 #droplet assets
 droplet_shader droplet
-droplet_projection glow
+droplet_projection droplet
 droplet_texture dropletlayout
 droplet_mesh dropletTest
 
@@ -31,3 +31,5 @@ object_cube_shader texture
 object_cube_projection texture
 object_cube_texture cube
 object_cube_mesh cube
+
+quad_shader quad

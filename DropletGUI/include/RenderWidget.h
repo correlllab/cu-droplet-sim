@@ -645,14 +645,18 @@ private:
 	int windowHeight;
 	int is_active;
 
-	GLuint fbo;
-	GLuint textureFBO;
-	GLuint depthTexFBO;
+	GLuint projectionFBO;
+	GLuint projectionTextureFBO;
 
+	GLuint sceneFBO;
+	GLuint sceneTextureFBO; 
 	void drawProjectionTexture(int width, int height);
-	void initProjectionTexture(int width, int height);
-	void createRGBATexture(int width, int height);
-	void createDepthTexture(int width, int height);
+
+	GLuint initFBO(int width, int height, GLuint &textureFBO);
+
+	GLuint createRGBATexture(int width, int height);
+	GLuint createDepthTexture(int width, int height);
+
 	void initTestBlob();
 	void updateBlob();
 
@@ -661,19 +665,17 @@ private:
 	GLfloat velocity[14];
 	GLuint vertexVBO;
 
-	// stuff for super awesome glow effect
-	int glowWidth;
-	int glowHeight;
 
-	GLuint glowFBO;
-	GLuint glowTextureFBO;
-	GLuint glowDepthTexFBO;
+	GLfloat quadVertices[18];
+	GLfloat quadUV[12];
 
-	QGLShaderProgram *glowVertShader;
-	QGLShaderProgram *glowFragShader;
+	GLuint quadVBO;
+	GLuint quaduvVBO;
+	void initQuad();
+	void drawQuad();
+	void drawScene(int width, int height);
 
-	void initGlowFBO(int width, int height);
-	void drawGlowFBO(int width, int height);
+	QGLShaderProgram *quadShader;
 };
 
 #endif // RENDERWIDGET_H

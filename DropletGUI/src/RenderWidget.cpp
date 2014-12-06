@@ -72,8 +72,8 @@ RenderWidget::RenderWidget(const QGLFormat& format, QWidget *parent)
 	qsrand((uint)time.msec());
 	_hudInfo.framesSinceLastUpdate = 99;
 
-	activeTextureWidth=1000;
-	activeTextureHeight=1000;
+	activeTextureWidth=1024;
+	activeTextureHeight=1024;
 	is_active=0;
 }
 
@@ -102,7 +102,6 @@ QSize RenderWidget::sizeHint() const
 {
 	return QSize(1280, 720);
 }
-
 
 void RenderWidget::initializeGL()
 {
@@ -138,8 +137,10 @@ void RenderWidget::initializeGL()
 	_timerID = startTimer(_targetFrameTime);
 
 	// fbo setup
-	initProjectionTexture(activeTextureWidth,activeTextureHeight);
-	initGlowFBO(1024,1024);
+	projectionFBO = initFBO(activeTextureWidth,activeTextureHeight,projectionFBO);
+	sceneFBO = initFBO(activeTextureWidth,activeTextureHeight,sceneFBO);
+	initTestBlob();
+	initQuad();
 }	
 
 void RenderWidget::setFPS(int FPS)
@@ -158,8 +159,6 @@ void RenderWidget::setFPS(int FPS)
 	}
 	_renderTimer.start();
 }
-
-
 
 void RenderWidget::resizeGL(int width, int height)
 {
@@ -263,7 +262,7 @@ void RenderWidget::paintGL()
 		// release resource
 		_simStateLock.fetchAndStoreOrdered(0);
 
-		glClearColor(0.0,0.0,0.0,1.0);
+		glClearColor(0.4,0.4,0.4,1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		if (_renderDebug > 1)
@@ -306,8 +305,8 @@ void RenderWidget::paintGL()
 			}
 		}
 
-		drawDroplets(true);
-		//drawObjects();
+		drawDroplets(false);
+		drawObjects();
 
 		if (_arena.projecting && _projectionTexture.valid)
 		{
@@ -337,14 +336,13 @@ void RenderWidget::paintGL()
 	}
 
 		// simple texture that is updated programmatically
-		if (is_active==1)
-		{
+		//if (is_active==1)
+		//{
 			updateBlob();
 			drawProjectionTexture(activeTextureWidth,activeTextureHeight);
-		}
-		
-
-
+		//}
+		drawScene(activeTextureWidth, activeTextureHeight);
+		drawQuad();
 }
 
 void RenderWidget::drawDroplets(bool drawGlow)
@@ -453,7 +451,7 @@ void RenderWidget::drawDroplets(bool drawGlow)
 			currentMesh->disableAttributeArrays();
 			currentMesh->unbindBuffer();
 			currentShader->release();
-			glActiveTexture(GL_TEXTURE0); // whay are textures bound and activated at the end?
+			glActiveTexture(GL_TEXTURE0); 
 			glBindTexture(GL_TEXTURE_2D,0);
 		}
 		glActiveTexture(GL_TEXTURE0);
@@ -856,6 +854,7 @@ void RenderWidget::drawHUD()
 	}
 
 }
+
 void RenderWidget::saveScreenShot(int width, int height)
 {
 	GLint currentFBO = 0;
@@ -934,6 +933,7 @@ void RenderWidget::saveScreenShot(int width, int height)
 	glDeleteFramebuffers(1, &offscreenFBO);
 
 }
+
 void RenderWidget::setupRenderStructs()
 {
 	//	setUpdateRate(_arena.fps);
@@ -987,7 +987,6 @@ glm::mat4 RenderWidget::makeModelMatrix(glm::vec3 scale, glm::vec3 rotate, glm::
 	model = glm::scale(model,scale);
 	return model;
 }
-
 
 void RenderWidget::timerEvent ( QTimerEvent * event ) 
 {
@@ -1045,18 +1044,14 @@ float RenderWidget::getRandomf(float min, float max)
 // based on http://www.lighthouse3d.com/tutorials/opengl-short-tutorials/opengl_framebuffer_objects/
 void RenderWidget::drawProjectionTexture(int width, int height) 
 {
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, projectionFBO);
 	glViewport(0,0,width,height);
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
 	glBufferData(GL_ARRAY_BUFFER, 42*sizeof(float), vertices, GL_STATIC_DRAW);
-
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, fbo);
-	glActiveTexture(GL_TEXTURE0);
 
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -1067,11 +1062,64 @@ void RenderWidget::drawProjectionTexture(int width, int height)
 	glViewport(0,0,windowWidth,windowHeight);
 }
 
+void RenderWidget::drawScene(int height, int width)
+{
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, sceneFBO);
+	glViewport(0,0,width,height);
+	glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
+	glBufferData(GL_ARRAY_BUFFER, 42*sizeof(float), vertices, GL_STATIC_DRAW);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 14);
+	glDisableVertexAttribArray(0);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0,0,windowWidth,windowHeight);
+}
+
+void RenderWidget::drawQuad()
+{
+	GLuint textureLocation;
+	
+	quadShader = assets.getShader(assets.lookupAssetName("quad_shader"));
+	quadShader->bind();
+	textureLocation = quadShader->uniformLocation("myTexture");
+
+
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, sceneFBO);
+	//glBindTexture(GL_TEXTURE_2D, projectionFBO);
+	glUniform1i(textureLocation, 2);
+	glActiveTexture(GL_TEXTURE0);
+
+	// bind vertex positions to shader
+	glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+	glBufferData(GL_ARRAY_BUFFER, 18*sizeof(GLfloat), quadVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+	// bind texture coords
+	glBindBuffer(GL_ARRAY_BUFFER, quaduvVBO);
+	glBufferData(GL_ARRAY_BUFFER, 12*sizeof(GLfloat), quadUV, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(1);
+
+	glBindBuffer(GL_ARRAY_BUFFER,0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
+	quadShader->release();
+}
+
 void RenderWidget::initTestBlob()
 {
-	//GLuint VertexArrayID;
-	//glGenVertexArrays(1, &VertexArrayID);
-	//glBindVertexArray(VertexArrayID);
 
 	// set center of fan
 	for (int i = 0; i < 3; i++) 
@@ -1103,8 +1151,29 @@ void RenderWidget::initTestBlob()
 	vertices[41] = vertices[5];
 
 	glGenBuffers(1, &vertexVBO);
-	//glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
-	//glBufferData(GL_ARRAY_BUFFER, 42*sizeof(float), vertices, GL_STATIC_DRAW);
+}
+
+void RenderWidget::initQuad()
+{
+	quadVertices[0] = -0.75; quadVertices[1] =  0.75; quadVertices[2] =  0.0; 
+	quadVertices[3] =  0.75; quadVertices[4] =  0.75; quadVertices[5] =  0.0;
+	quadVertices[6] = -0.75; quadVertices[7] = -0.75; quadVertices[8] =  0.0;
+
+	quadVertices[9]  =  0.75; quadVertices[10] =  0.75; quadVertices[11] = 0.0;
+	quadVertices[12] =  0.75; quadVertices[13] = -0.75; quadVertices[14] = 0.0;
+	quadVertices[15] = -0.75; quadVertices[16] = -0.75; quadVertices[17] = 0.0;
+
+	glGenBuffers(1,&quadVBO);
+
+	quadUV[0] = 0.0; quadUV[1] = 1.0;
+	quadUV[2] = 1.0; quadUV[3] = 1.0;
+	quadUV[4] = 0.0; quadUV[5] = 0.0;
+
+	quadUV[6] = 1.0; quadUV[7] = 1.0;
+	quadUV[8] = 1.0; quadUV[9] = 0.0;
+	quadUV[10] = 0.0; quadUV[11] = 0.0;
+
+	glGenBuffers(1,&quaduvVBO);
 }
 
 void RenderWidget::updateBlob()
@@ -1142,24 +1211,23 @@ void RenderWidget::updateBlob()
 	vertices[39] = vertices[3];
 	vertices[40] = vertices[4];
 	vertices[41] = vertices[5];
-
-	//glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
-	//glBufferData(GL_ARRAY_BUFFER, 42*sizeof(float), vertices, GL_STATIC_DRAW);
 }
 
-void RenderWidget::initProjectionTexture(int width, int height) 
+GLuint RenderWidget::initFBO(int width, int height, GLuint &textureFBO) 
 {
-
+	GLuint fbo;
 	glGenFramebuffers(1, &fbo);
 	std::cout<<"fbo = "<<fbo<<std::endl;
 
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 
-	createRGBATexture(width, height);
+
+	textureFBO=createRGBATexture(width, height);
 	glFramebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, textureFBO, 0);
 
-	createDepthTexture(width, height);
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexFBO, 0);
+	GLuint depthFBO;
+	depthFBO = createDepthTexture(width, height);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthFBO, 0);
 
 	GLenum e = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
 	switch (e) {
@@ -1186,17 +1254,21 @@ void RenderWidget::initProjectionTexture(int width, int height)
 			std::cout<<"FBO Problem?\n"<<std::endl;
 	}
 
+	if (e != GL_FRAMEBUFFER_COMPLETE) return(0);
+
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER,0);
-	initTestBlob();
+
+	return(fbo);
 }
 
-void RenderWidget::createRGBATexture(int width, int height) 
+GLuint RenderWidget::createRGBATexture(int width, int height) 
 {
+	GLuint tex;
 	std::cout<<"createRGBATexture"<<std::endl;
-	glGenTextures(1, &textureFBO);
-	std::cout<<"textureFBO = "<<textureFBO<<std::endl;
+	glGenTextures(1, &tex);
+	std::cout<<"textureFBO = "<<tex<<std::endl;
 
-	glBindTexture(GL_TEXTURE_2D, textureFBO);
+	glBindTexture(GL_TEXTURE_2D, tex);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -1206,49 +1278,17 @@ void RenderWidget::createRGBATexture(int width, int height)
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL); 
 
 	glBindTexture(GL_TEXTURE_2D, 0);
+
+	return(tex);
 }
 
-void RenderWidget::createDepthTexture(int width, int height) 
+GLuint RenderWidget::createDepthTexture(int width, int height) 
 {
+	GLuint tex;
 	std::cout<<"createDepthTexture"<<std::endl;
-	glGenTextures(1, &depthTexFBO);
-	std::cout<<"depthTexFBO = "<<depthTexFBO<<std::endl;
-	glBindTexture(GL_TEXTURE_2D, depthTexFBO);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL); 
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-}
-
-void RenderWidget::initGlowFBO(int width, int height) 
-{
-	glGenFramebuffers(1, &glowFBO);
-
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, glowFBO);
-
-	glGenTextures(1, &glowTextureFBO);
-
-	glBindTexture(GL_TEXTURE_2D, glowTextureFBO);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL); 
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	glFramebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, glowTextureFBO, 0);
-
-
-	glGenTextures(1, &glowDepthTexFBO);
-	glBindTexture(GL_TEXTURE_2D, glowDepthTexFBO);
+	glGenTextures(1, &tex);
+	std::cout<<"depthTexFBO = "<<tex<<std::endl;
+	glBindTexture(GL_TEXTURE_2D, tex);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -1259,37 +1299,5 @@ void RenderWidget::initGlowFBO(int width, int height)
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, glowDepthTexFBO, 0);
-
-	GLenum e = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
-	switch (e) {
-	
-		case GL_FRAMEBUFFER_UNDEFINED:
-			std::cout<<"FBO Undefined\n"<<std::endl;
-			break;
-		case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT :
-			std::cout<<"FBO Incomplete Attachment\n"<<std::endl;
-			break;
-		case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT :
-			std::cout<<"FBO Missing Attachment\n"<<std::endl;
-			break;
-		case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER :
-			std::cout<<"FBO Incomplete Draw Buffer\n"<<std::endl;
-			break;
-		case GL_FRAMEBUFFER_UNSUPPORTED :
-			std::cout<<"FBO Unsupported\n"<<std::endl;
-			break;
-		case GL_FRAMEBUFFER_COMPLETE:
-			std::cout<<"FBO OK\n"<<std::endl;
-			break;
-		default:
-			std::cout<<"FBO Problem?\n"<<std::endl;
-	}
-
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER,0);
-}
-
-void RenderWidget::drawGlowFBO(int width, int height)
-{
-
+	return(tex);
 }

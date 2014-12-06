@@ -232,6 +232,8 @@
     <None Include="..\..\Assets\Shaders\glowFrag.glsl" />
     <None Include="..\..\Assets\Shaders\glowVert.glsl" />
     <None Include="..\..\Assets\Shaders\ProjectorFragment.glsl" />
+    <None Include="..\..\Assets\Shaders\quadFrag.glsl" />
+    <None Include="..\..\Assets\Shaders\quadVert.glsl" />
     <None Include="..\..\Assets\Shaders\shaders.txt" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
