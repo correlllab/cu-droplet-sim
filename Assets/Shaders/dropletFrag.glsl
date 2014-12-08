@@ -73,9 +73,9 @@ void main()
 
 	// TODO: get these parameters from the light source object
 	fragColor = (emission // led glow
-				+ vec4(0.3,0.3,0.3,1.0) // ambient lighting
-				+ Id * vec4(0.5,0.5,0.5,1.0)) // diffuse lighting
-				//+ Is * vec4(0.1,0.1,0.1,1.0)) // specular lighting
+				+ vec4(0.5,0.5,0.5,1.0) // ambient lighting
+				+ Id * vec4(0.5,0.5,0.5,1.0) // diffuse lighting
+				+ Is * vec4(0.5,0.5,0.5,1.0)) // specular lighting
 				* (tex_Color) * percentColored
 				+ Ip * proj_Color * (1.0-percentColored); // overlay projection texture
 }

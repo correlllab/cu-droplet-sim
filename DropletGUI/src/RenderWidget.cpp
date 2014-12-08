@@ -76,6 +76,9 @@ RenderWidget::RenderWidget(const QGLFormat& format, QWidget *parent)
 	activeTextureHeight=2048;
 	is_active=0;
 	displayTexture = 0; 
+	blurPercent = 0.5;
+	blurRadius = 512.0;
+	numPasses = 0;
 }
 
 RenderWidget::~RenderWidget()
@@ -348,6 +351,14 @@ void RenderWidget::paintGL()
 		}
 		drawScene(activeTextureWidth, activeTextureHeight);
 		drawGlow(activeTextureWidth, activeTextureHeight);
+		gaussianBlur(activeTextureWidth, activeTextureHeight, 0, true);
+		gaussianBlur(activeTextureWidth, activeTextureHeight, 1, true);
+		for (int i=0; i<numPasses; i++) 
+		{
+			gaussianBlur(activeTextureWidth, activeTextureHeight, 0, false);
+			gaussianBlur(activeTextureWidth, activeTextureHeight, 1, false);
+		}
+		combineImages(activeTextureWidth, activeTextureHeight);
 }
 
 void RenderWidget::drawDroplets(bool drawGlow)
@@ -369,6 +380,7 @@ void RenderWidget::drawDroplets(bool drawGlow)
 		GLint is_projectingLocation;
 		GLint is_activeLocation;
 		GLint activeTextureLocation;
+		
 		glActiveTexture(GL_TEXTURE0);
 
 		// choose the shader to use: debug or normal
@@ -400,6 +412,7 @@ void RenderWidget::drawDroplets(bool drawGlow)
 			objectTextureLocation = currentShader->uniformLocation("objectTexture");
 			is_activeLocation = currentShader->uniformLocation("is_activeTexture");
 			activeTextureLocation = currentShader->uniformLocation("activeTexture");
+			
 
 			// set shader variables for all droplets
 			glUniform4fv(projectorPositionLocation,1,glm::value_ptr(_projector.position));
@@ -412,6 +425,7 @@ void RenderWidget::drawDroplets(bool drawGlow)
 			currentShader->setUniformValue("in_View",_camera.viewMatrix);
 			glUniform1i(activeTextureLocation,2);
 			glUniform1i(is_activeLocation,is_active);
+
 
 			// pass shader information to calculate projected texture
 			float floorWidth = _arena.tileLength * _arena.numColTiles;
@@ -463,7 +477,7 @@ void RenderWidget::drawDroplets(bool drawGlow)
 	}
 }
 
-void RenderWidget::drawObjects()
+void RenderWidget::drawObjects(bool drawGlow)
 {
 	QVector<objectStruct_t> objects = _renderState.dynamicObjectData + _renderState.staticObjectData;
 	if (objects.count() > 0){
@@ -478,6 +492,7 @@ void RenderWidget::drawObjects()
 		GLint is_activeLocation;
 
 		GLint is_projectingLocation;
+		GLint is_glowingLocation;
 
 		glActiveTexture(GL_TEXTURE0);
 
@@ -547,12 +562,15 @@ void RenderWidget::drawObjects()
 					is_projectingLocation = currentShader->uniformLocation("is_projecting");
 					activeTextureLocation = currentShader->uniformLocation("activeTexture");
 					pLoc = currentShader->uniformLocation("in_ProjOffsets");
+					is_glowingLocation = currentShader->uniformLocation("is_glowing");
 					glUniform2fv(pLoc,1,glm::value_ptr(lengths));
 					glUniform1i(t0Loc,0);
 					glUniform1i(t1Loc,1);
 					glUniform1i(activeTextureLocation,2);
 					glUniform1i(is_activeLocation,is_active);
 					glUniform1i(is_projectingLocation,(GLint)_arena.projecting);
+					if (drawGlow) glUniform1i(is_glowingLocation,1);
+					else glUniform1i(is_glowingLocation,0);
 				}
 			}
 
@@ -1058,10 +1076,6 @@ float RenderWidget::getRandomf(float min, float max)
 // based on http://www.lighthouse3d.com/tutorials/opengl-short-tutorials/opengl_framebuffer_objects/
 void RenderWidget::drawProjectionTexture(int width, int height) 
 {
-	//glActiveTexture(GL_TEXTURE2);
-	//glBindTexture(GL_TEXTURE_2D,0);
-	//glActiveTexture(GL_TEXTURE0);
-
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, projectionFBO);
 	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, projectionTextureFBO[0], 0);
 
@@ -1102,7 +1116,7 @@ void RenderWidget::drawScene(int height, int width)
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
-	drawObjects();
+	drawObjects(false);
 	drawDroplets(false);
 
 	glActiveTexture(GL_TEXTURE3);
@@ -1124,10 +1138,123 @@ void RenderWidget::drawGlow(int height, int width)
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
+	drawObjects(true);
 	drawDroplets(true);
 
 	glActiveTexture(GL_TEXTURE4);
 	glBindTexture(GL_TEXTURE_2D, projectionTextureFBO[2]);
+	glActiveTexture(GL_TEXTURE0);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0,0,windowWidth,windowHeight);
+}
+
+void RenderWidget::combineImages(int width, int height)
+{
+	GLuint textureLocation;
+	GLuint blurLocation;
+	GLuint percentLocation;
+
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, projectionFBO);
+
+	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, projectionTextureFBO[5], 0);
+	quadShader = assets.getShader(assets.lookupAssetName("combo_shader"));
+	quadShader->bind();
+	glViewport(0,0,width,height);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	textureLocation = quadShader->uniformLocation("sceneTexture");
+	blurLocation = quadShader->uniformLocation("blurTexture");
+	percentLocation = quadShader->uniformLocation("blurPercent");
+
+	glUniform1i(textureLocation,3);
+	glUniform1i(blurLocation,6);
+	glUniform1f(percentLocation,blurPercent);
+
+	// bind vertex positions to shader
+	glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+	glBufferData(GL_ARRAY_BUFFER, 18*sizeof(GLfloat), quadVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+	// bind texture coords
+	glBindBuffer(GL_ARRAY_BUFFER, quaduvVBO);
+	glBufferData(GL_ARRAY_BUFFER, 12*sizeof(GLfloat), quadUV, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(1);
+
+	glBindBuffer(GL_ARRAY_BUFFER,0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
+	quadShader->release();
+
+	glActiveTexture(GL_TEXTURE7);
+	glBindTexture(GL_TEXTURE_2D, projectionTextureFBO[5]);
+	glActiveTexture(GL_TEXTURE0);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0,0,windowWidth,windowHeight);
+
+}
+
+void RenderWidget::gaussianBlur(int width, int height, int direction, bool isFirstPass)
+{
+	GLuint textureLocation;
+	GLuint directionLocation;
+	GLuint radiusLocation;
+	GLuint inTexture;
+
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, projectionFBO);
+
+	if (direction == 0) inTexture = 4;		
+	else inTexture = 5;
+
+	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, projectionTextureFBO[inTexture-1], 0);
+	quadShader = assets.getShader(assets.lookupAssetName("blur_shader"));
+	quadShader->bind();
+	glViewport(0,0,width,height);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	textureLocation = quadShader->uniformLocation("myTexture");
+	directionLocation = quadShader->uniformLocation("blurDirection");
+	radiusLocation = quadShader->uniformLocation("blurRadius");
+	
+	if (isFirstPass==false && direction == 0) glUniform1i(textureLocation,6);
+	else glUniform1i(textureLocation,inTexture);
+	glUniform1i(directionLocation,direction);
+	glUniform1f(radiusLocation,blurRadius);
+
+	// bind vertex positions to shader
+	glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+	glBufferData(GL_ARRAY_BUFFER, 18*sizeof(GLfloat), quadVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+	// bind texture coords
+	glBindBuffer(GL_ARRAY_BUFFER, quaduvVBO);
+	glBufferData(GL_ARRAY_BUFFER, 12*sizeof(GLfloat), quadUV, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(1);
+
+	glBindBuffer(GL_ARRAY_BUFFER,0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
+	quadShader->release();
+
+
+	if (direction==0) glActiveTexture(GL_TEXTURE5);
+	else glActiveTexture(GL_TEXTURE6);
+	glBindTexture(GL_TEXTURE_2D, projectionTextureFBO[inTexture-1]);
 	glActiveTexture(GL_TEXTURE0);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -1269,7 +1396,7 @@ GLuint RenderWidget::initFBO(int width, int height)//, GLuint &textureFBO)
 
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < 6; i++)
 	{
 		projectionTextureFBO[i]=createRGBATexture(width, height);
 		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, projectionTextureFBO[i], 0);

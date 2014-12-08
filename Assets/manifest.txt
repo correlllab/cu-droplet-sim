@@ -35,3 +35,5 @@ object_cube_mesh cube
 quad_shader quad
 glow_shader glow
 proj_shader proj
+blur_shader blur
+combo_shader combo

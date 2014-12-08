@@ -329,7 +329,37 @@ void RenderWidget::keyPressEvent(QKeyEvent *event)
 	if (event->key() == Qt::Key_F)
 	{
 		displayTexture+=1;
-		displayTexture%=5;
+		displayTexture%=8;
+	}
+
+	if (event->key() == Qt::Key_Comma) 
+	{
+		blurPercent -= 0.05;
+		if (blurPercent<0) blurPercent = 0.0;
+	}
+
+	if (event->key() == Qt::Key_Period) 
+	{
+		blurPercent += 0.05;
+		if (blurPercent>1.0) blurPercent = 1.0;
+	}
+
+	if (event->key() == Qt::Key_Semicolon) 
+	{
+		blurRadius/=2.0;
+		if (blurRadius<=4.0) blurRadius=4.0;
+	}
+
+	if (event->key() == Qt::Key_Apostrophe)
+	{
+		blurRadius*=2.0;
+		if (blurRadius>=16384.0) blurRadius=16384.0;
+	}
+
+	if (event->key() == Qt::Key_M) 
+	{
+		numPasses+=1;
+		numPasses%=5;
 	}
 }
 

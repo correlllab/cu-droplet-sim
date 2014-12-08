@@ -7,7 +7,13 @@ droplet dropletVert.glsl dropletFrag.glsl
 # per-pixel lighting for the arena
 texture CommonVertex.glsl ProjectorFragment.glsl
 
-# glow shader
-glow glowVert.glsl glowFrag.glsl
+# render to screen shader
 quad quadVert.glsl quadFrag.glsl
+
+# glow shaders
+glow glowVert.glsl glowFrag.glsl
+blur blurVert.glsl blurFrag.glsl
+combo quadVert.glsl comboFrag.glsl
+
+# active projection shader
 proj projVert.glsl projFrag.glsl

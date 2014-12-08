@@ -249,7 +249,7 @@ protected:
 	* \brief	Draw objects.
 	*/
 
-	void drawObjects();
+	void drawObjects(bool drawGlow);
 
 
 
@@ -645,39 +645,34 @@ private:
 	int windowHeight;
 	int is_active;
 	int displayTexture;
-
+	int numPasses;
 	GLuint projectionFBO;
-	GLuint projectionTextureFBO[4];
-
-	//GLuint sceneFBO;
-	//GLuint sceneTextureFBO; 
-	void drawProjectionTexture(int width, int height);
-
+	GLuint projectionTextureFBO[6];
 	GLuint initFBO(int width, int height);//, GLuint &textureFBO);
-
 	GLuint createRGBATexture(int width, int height);
 	GLuint createDepthTexture(int width, int height);
-
-	void initTestBlob();
-	void updateBlob();
-
+	GLuint quadVBO;
+	GLuint quaduvVBO;
+	GLuint vertexVBO;
 	GLfloat vertices[42];
 	GLfloat r[14];
 	GLfloat velocity[14];
-	GLuint vertexVBO;
-
-
 	GLfloat quadVertices[18];
 	GLfloat quadUV[12];
+	GLfloat blurPercent;
+	GLfloat blurRadius;
+	QGLShaderProgram *quadShader;
 
-	GLuint quadVBO;
-	GLuint quaduvVBO;
 	void initQuad();
 	void drawQuad();
 	void drawScene(int width, int height);
 	void drawGlow(int width, int height);
+	void initTestBlob();
+	void updateBlob();
+	void drawProjectionTexture(int width, int height);
+	void gaussianBlur(int width, int height, int direction, bool isFirstPass);
 
-	QGLShaderProgram *quadShader;
+	void combineImages(int width, int height);
 };
 
 #endif // RENDERWIDGET_H

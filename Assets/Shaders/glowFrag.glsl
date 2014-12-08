@@ -64,11 +64,11 @@ void main()
 		emission.z=ledColor.z;
 	}
 
-	if (height>0.85)
+	if (height>0.86)
 	{
-		emission.x=ledColor.x*(0.92-height)/0.07;
-		emission.y=ledColor.y*(0.92-height)/0.07;
-		emission.z=ledColor.z*(0.92-height)/0.07;
+		emission.x=0.0; //ledColor.x*(0.92-height)/0.07;
+		emission.y=0.0; //ledColor.y*(0.92-height)/0.07;
+		emission.z=0.0; //ledColor.z*(0.92-height)/0.07;
 	}
 
 	// TODO: get these parameters from the light source object

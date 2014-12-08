@@ -224,6 +224,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\Assets\manifest.txt" />
+    <None Include="..\..\Assets\Shaders\blurFrag.glsl" />
+    <None Include="..\..\Assets\Shaders\blurVert.glsl" />
+    <None Include="..\..\Assets\Shaders\comboFrag.glsl" />
     <None Include="..\..\Assets\Shaders\CommonVertex.glsl" />
     <None Include="..\..\Assets\Shaders\DebugFragment.glsl" />
     <None Include="..\..\Assets\Shaders\DebugVertex.glsl" />

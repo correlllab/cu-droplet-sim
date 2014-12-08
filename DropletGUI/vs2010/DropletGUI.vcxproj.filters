@@ -225,5 +225,14 @@
     <None Include="..\..\Assets\Shaders\projVert.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
+    <None Include="..\..\Assets\Shaders\blurVert.glsl">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\..\Assets\Shaders\blurFrag.glsl">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\..\Assets\Shaders\comboFrag.glsl">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
