@@ -33,3 +33,5 @@ object_cube_texture cube
 object_cube_mesh cube
 
 quad_shader quad
+glow_shader glow
+proj_shader proj

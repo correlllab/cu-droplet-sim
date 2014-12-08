@@ -10,3 +10,4 @@ texture CommonVertex.glsl ProjectorFragment.glsl
 # glow shader
 glow glowVert.glsl glowFrag.glsl
 quad quadVert.glsl quadFrag.glsl
+proj projVert.glsl projFrag.glsl

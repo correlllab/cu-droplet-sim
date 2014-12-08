@@ -644,15 +644,16 @@ private:
 	int windowWidth;
 	int windowHeight;
 	int is_active;
+	int displayTexture;
 
 	GLuint projectionFBO;
-	GLuint projectionTextureFBO;
+	GLuint projectionTextureFBO[4];
 
-	GLuint sceneFBO;
-	GLuint sceneTextureFBO; 
+	//GLuint sceneFBO;
+	//GLuint sceneTextureFBO; 
 	void drawProjectionTexture(int width, int height);
 
-	GLuint initFBO(int width, int height, GLuint &textureFBO);
+	GLuint initFBO(int width, int height);//, GLuint &textureFBO);
 
 	GLuint createRGBATexture(int width, int height);
 	GLuint createDepthTexture(int width, int height);
@@ -674,6 +675,7 @@ private:
 	void initQuad();
 	void drawQuad();
 	void drawScene(int width, int height);
+	void drawGlow(int width, int height);
 
 	QGLShaderProgram *quadShader;
 };

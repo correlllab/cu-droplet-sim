@@ -325,6 +325,12 @@ void RenderWidget::keyPressEvent(QKeyEvent *event)
 		is_active+=1;
 		is_active%=2;
 	}
+
+	if (event->key() == Qt::Key_F)
+	{
+		displayTexture+=1;
+		displayTexture%=5;
+	}
 }
 
 void RenderWidget::keyReleaseEvent(QKeyEvent *event)
