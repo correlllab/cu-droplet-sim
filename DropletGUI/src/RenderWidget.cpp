@@ -1388,6 +1388,7 @@ void RenderWidget::updateBlob()
 	vertices[41] = vertices[5];
 }
 
+// based on http://www.lighthouse3d.com/tutorials/opengl-short-tutorials/opengl_framebuffer_objects/
 GLuint RenderWidget::initFBO(int width, int height)//, GLuint &textureFBO) 
 {
 	GLuint fbo;
