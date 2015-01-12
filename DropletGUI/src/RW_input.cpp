@@ -3,7 +3,6 @@
 *
 * \brief	Implements the input handling for the RenderWidget class.
 */
-
 #include "RenderWidget.h"
 
 // handle mouse movement
@@ -26,28 +25,154 @@ void RenderWidget::mouseMoveEvent ( QMouseEvent * event )
 // handle mouse button pressed
 void RenderWidget::mousePressEvent ( QMouseEvent * event )
 {
-
-
-	if (event->buttons().testFlag(Qt::RightButton) || event->buttons().testFlag(Qt::LeftButton))
-	{
-		if (event->buttons().testFlag(Qt::LeftButton))
-		{
-			_mouseStatus.leftButtonHeldDown = true;
-		}
-		else 
-		{
-			_mouseStatus.rightButtonHeldDown = true;
-			_mouseStatus.startX = event->x();
-			_mouseStatus.startY = event->y();
-			_mouseStatus.origHoriz = _camera.rotHoriz;
-			_mouseStatus.origVert = _camera.rotVert;
-			_mouseStatus.origPan = _camera.pan;
-			_mouseStatus.origTilt = _camera.tilt;
-			setCursor(QCursor(Qt::BlankCursor));
-		}
-		
+	if (event->buttons().testFlag(Qt::MiddleButton)) {
+		//no middle mouse button fuctionality;
 	}
-	event->accept();
+
+	if (event->buttons().testFlag(Qt::LeftButton))
+	{
+		_mouseStatus.leftButtonHeldDown = true;
+		_mouseStatus.startX = event->x();
+		_mouseStatus.startY = event->y();
+		setCursor(QCursor(Qt::CrossCursor));
+		QPoint selectionPoint(_mouseStatus.startX,_mouseStatus.startY);
+		mouseSelect(selectionPoint);
+		event->accept();
+	}
+
+	if (event->buttons().testFlag(Qt::RightButton))
+	{
+		_mouseStatus.rightButtonHeldDown = true;
+		_mouseStatus.startX = event->x();
+		_mouseStatus.startY = event->y();
+		_mouseStatus.origHoriz = _camera.rotHoriz;
+		_mouseStatus.origVert = _camera.rotVert;
+		_mouseStatus.origPan = _camera.pan;
+		_mouseStatus.origTilt = _camera.tilt;
+		setCursor(QCursor(Qt::BlankCursor));
+		event->accept();
+	}
+}
+
+// handle selection of droplet
+// follows: http://www.lighthouse3d.com/tutorials/maths/ray-sphere-intersection/
+// collision checking is done in eye-space
+// TODO: update to use bullet's collision detection methods.
+void RenderWidget::mouseSelect (QPoint location)
+{
+	QString toolTipText;
+	QMatrix4x4 modelMatrix;
+	float distanceToNearestDroplet=-1.0f; // keeps track of nearest droplet clicked on 
+	int nearestId = -1;
+
+	// current window 
+	float width;
+	float height;
+	width = this->width();
+	height = this->height();
+
+	// NDE coordinates:
+	QVector4D nds;
+	nds.setX((2.0f * _mouseStatus.startX) / width - 1.0f);
+	nds.setY(1.0f - (2.0f * _mouseStatus.startY) / height);
+	nds.setZ(0.0f);
+	nds.setW(0.0f);
+		
+	// Clip coordinates:
+	QVector4D clip;
+	clip.setW(1.0);
+	clip.setX(nds.x());
+	clip.setY(nds.y());
+	clip.setZ(nds.z());
+
+	// near eye coordinates:
+	QVector4D eye_near;
+	eye_near = _camera.projectionMatrix.inverted() * clip;
+	eye_near.operator/=(eye_near.w());
+
+	// far eye coordinates:
+	clip.setZ(1.0 * clip.w());
+	QVector4D eye_far;
+	eye_far = _camera.projectionMatrix.inverted() * clip;
+	eye_far.operator/=(eye_far.w());
+
+	modelMatrix = _camera.projectionMatrix;
+
+	QVector3D click_ray;
+	click_ray.setX(eye_far.x() - eye_near.x());
+	click_ray.setY(eye_far.y() - eye_near.y());
+	click_ray.setZ(eye_far.z() - eye_near.z());
+	click_ray.normalize();
+
+	foreach(dropletStruct_t droplet,_renderState.dropletData)
+	{
+		// compute model matrix
+		// TODO: this is already done with drawDroplets() function, shouldn't need to redo it
+		glm::vec3 origin = glm::vec3( droplet.origin.x, droplet.origin.y, droplet.origin.z);
+
+		glm::quat quaternion = glm::quat(droplet.quaternion.w,droplet.quaternion.x,
+			droplet.quaternion.y,droplet.quaternion.z);
+
+		glm::mat4 model =  glm::translate(glm::mat4(1.0f),origin);
+		model = model * glm::mat4_cast(quaternion);
+		model = glm::scale(model,glm::vec3(_arena.dropletRadius));
+		model = glm::translate(model,glm::vec3(0,0,_arena.dropletOffset));
+
+		// change model from glm::mat4 to QMatrix4x4	
+		QVector4D rowValues;
+		for (int i = 0; i < 4; i++) 
+		{
+			rowValues.setX(model[i][0]);
+			rowValues.setY(model[i][1]);
+			rowValues.setZ(model[i][2]);
+			rowValues.setW(model[i][3]);
+			modelMatrix.setColumn(i,rowValues);
+		}
+
+		QMatrix4x4 modelViewProj = _camera.viewMatrix * modelMatrix;
+
+		// TODO: correct z coordinate so collision is more exact.
+		QVector4D dropletOrigin(0.0,0.0,1.0,1.0);
+
+		QVector4D dropletPosition = modelViewProj * dropletOrigin;
+			
+		// vector from near_eye point to droplet location
+		QVector3D u = QVector3D(dropletPosition.x() - eye_near.x(),
+								dropletPosition.y() - eye_near.y(),
+								dropletPosition.z() - eye_near.z());
+
+		// projection of vector onto the click ray
+		float projection = QVector3D::dotProduct(click_ray,u);
+
+		// vector from droplet to the click ray, distance <= radius --> intersection
+		QVector3D toClickRay;
+		toClickRay.setX(eye_near.x() + projection * click_ray.x());
+		toClickRay.setY(eye_near.y() + projection * click_ray.y());
+		toClickRay.setZ(eye_near.z() + projection * click_ray.z());
+
+		QVector3D toSphere;
+		toSphere.setX(dropletPosition.x() - toClickRay.x());
+		toSphere.setY(dropletPosition.y() - toClickRay.y());
+		toSphere.setZ(dropletPosition.z() - toClickRay.z());
+
+		float distance = toSphere.length();
+		float distanceToScreen = toClickRay.length();
+
+		if (distance <= _arena.dropletRadius) 
+		{
+			// onlykeep the hit closest to the screen
+			if (nearestId == -1 || distanceToNearestDroplet > distanceToScreen) 
+			{
+				nearestId = droplet.dropletID;
+				distanceToNearestDroplet = distanceToScreen;
+				toolTipText = QString("id = %1\nTODO: something cool!").arg(droplet.dropletID);
+				location.setX(location.x()+this->x());
+				location.setY(location.y()+this->y());
+				QToolTip::showText(location, toolTipText);
+				
+			}
+		}
+	}
 }
 
 // handle releasing the mouse button
@@ -57,13 +182,15 @@ void RenderWidget::mouseReleaseEvent ( QMouseEvent * event )
 	{
 		_mouseStatus.rightButtonHeldDown = false;
 		setCursor(QCursor(Qt::ArrowCursor));
+		event->accept();
 	}
 
 	if (!event->buttons().testFlag(Qt::LeftButton)) 
 	{
 		_mouseStatus.leftButtonHeldDown = false;
+		event->accept();
 	}
-	event->accept();
+	
 }
 
 // event to handle scrolling with scroll wheel
@@ -191,6 +318,48 @@ void RenderWidget::keyPressEvent(QKeyEvent *event)
 	{
 		if (_simRates.limitRate)
 			emit increaseRate();
+	}
+
+	if(event->key() == Qt::Key_O)
+	{
+		is_active+=1;
+		is_active%=2;
+	}
+
+	if (event->key() == Qt::Key_F)
+	{
+		displayTexture+=1;
+		displayTexture%=8;
+	}
+
+	if (event->key() == Qt::Key_Comma) 
+	{
+		blurPercent -= 0.05;
+		if (blurPercent<0) blurPercent = 0.0;
+	}
+
+	if (event->key() == Qt::Key_Period) 
+	{
+		blurPercent += 0.05;
+		if (blurPercent>1.0) blurPercent = 1.0;
+	}
+
+	if (event->key() == Qt::Key_Semicolon) 
+	{
+		blurRadius/=2.0;
+		if (blurRadius<=4.0) blurRadius=4.0;
+	}
+
+	if (event->key() == Qt::Key_Apostrophe)
+	{
+		blurRadius*=2.0;
+		if (blurRadius>=16384.0) blurRadius=16384.0;
+	}
+
+	if (event->key() == Qt::Key_M) 
+	{
+		numPasses+=1;
+		numPasses%=5;
 	}
 }
 

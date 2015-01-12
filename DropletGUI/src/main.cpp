@@ -3,13 +3,20 @@
  *
  * \brief	Implements the main function.
  */
-
+#include <iostream>
+#include <fstream>
 #include <QApplication>
 #include "MainWindow.h"
 
 //! [0]
 int main(int argc, char **argv)
 {
+
+	// redirect cout
+	std::ofstream out("fbo.log");
+	std::cout.rdbuf(out.rdbuf());
+	std::cout<<"frame buffer object debug log"<<std::endl;
+
 	// initialize the QApplication object	
 	QApplication a(argc, argv);
 

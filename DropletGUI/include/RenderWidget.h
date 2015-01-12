@@ -25,6 +25,8 @@
 #include <QKeyEvent>
 #include <QCoreApplication>
 #include <QAtomicInt>
+#include <QToolTip>
+#include <QString>
 
 #include "DropletGUIDefaults.h"
 #include "DropletGUIStructs.h"
@@ -239,7 +241,7 @@ protected:
 	* \brief	Draw droplets.
 	*/
 
-	void drawDroplets();
+	void drawDroplets(bool drawGlow);
 
 	/**
 	* \fn	void RenderWidget::drawObjects();
@@ -247,7 +249,9 @@ protected:
 	* \brief	Draw objects.
 	*/
 
-	void drawObjects();
+	void drawObjects(bool drawGlow);
+
+
 
 	/**
 	* \fn	void RenderWidget::timerEvent(QTimerEvent *event);
@@ -317,6 +321,14 @@ protected:
 	*/
 
 	void processInput(float timeSinceLastUpdate);
+
+	/**
+	* \fn	void RenderWidget::mouseSelect ( int x, int y );
+	*
+	* \brief	Test if mouse clicked a droplet
+	*/
+
+	void mouseSelect ( QPoint location );
 
 	/**
 	* \fn	void RenderWidget::mouseMoveEvent ( QMouseEvent * event );
@@ -625,6 +637,42 @@ private:
 	*/
 
 	simRate_t _simRates;
+
+	// stuff for fbo
+	int activeTextureWidth;
+	int activeTextureHeight;
+	int windowWidth;
+	int windowHeight;
+	int is_active;
+	int displayTexture;
+	int numPasses;
+	GLuint projectionFBO;
+	GLuint projectionTextureFBO[6];
+	GLuint initFBO(int width, int height);//, GLuint &textureFBO);
+	GLuint createRGBATexture(int width, int height);
+	GLuint createDepthTexture(int width, int height);
+	GLuint quadVBO;
+	GLuint quaduvVBO;
+	GLuint vertexVBO;
+	GLfloat vertices[42];
+	GLfloat r[14];
+	GLfloat velocity[14];
+	GLfloat quadVertices[18];
+	GLfloat quadUV[12];
+	GLfloat blurPercent;
+	GLfloat blurRadius;
+	QGLShaderProgram *quadShader;
+
+	void initQuad();
+	void drawQuad();
+	void drawScene(int width, int height);
+	void drawGlow(int width, int height);
+	void initTestBlob();
+	void updateBlob();
+	void drawProjectionTexture(int width, int height);
+	void gaussianBlur(int width, int height, int direction, bool isFirstPass);
+
+	void combineImages(int width, int height);
 };
 
 #endif // RENDERWIDGET_H

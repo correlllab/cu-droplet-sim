@@ -224,19 +224,22 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\Assets\manifest.txt" />
+    <None Include="..\..\Assets\Shaders\blurFrag.glsl" />
+    <None Include="..\..\Assets\Shaders\blurVert.glsl" />
+    <None Include="..\..\Assets\Shaders\comboFrag.glsl" />
     <None Include="..\..\Assets\Shaders\CommonVertex.glsl" />
     <None Include="..\..\Assets\Shaders\DebugFragment.glsl" />
     <None Include="..\..\Assets\Shaders\DebugVertex.glsl" />
     <None Include="..\..\Assets\Shaders\dropletFrag.glsl" />
     <None Include="..\..\Assets\Shaders\dropletVert.glsl" />
-    <None Include="..\..\Assets\Shaders\DropletCommonVertex.glsl" />
-    <None Include="..\..\Assets\Shaders\DropletFragment.glsl" />
-    <None Include="..\..\Assets\Shaders\DropletTexFragment.glsl" />
-    <None Include="..\..\Assets\Shaders\ProjDropletFragment.glsl" />
+    <None Include="..\..\Assets\Shaders\glowFrag.glsl" />
+    <None Include="..\..\Assets\Shaders\glowVert.glsl" />
     <None Include="..\..\Assets\Shaders\ProjectorFragment.glsl" />
+    <None Include="..\..\Assets\Shaders\projFrag.glsl" />
+    <None Include="..\..\Assets\Shaders\projVert.glsl" />
+    <None Include="..\..\Assets\Shaders\quadFrag.glsl" />
+    <None Include="..\..\Assets\Shaders\quadVert.glsl" />
     <None Include="..\..\Assets\Shaders\shaders.txt" />
-    <None Include="..\..\Assets\Shaders\SimpleFragment.glsl" />
-    <None Include="..\..\Assets\Shaders\TextureFragment.glsl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{2076F437-C2C5-4780-822B-2791F4F4E0FD}</ProjectGuid>
@@ -410,6 +413,7 @@ xcopy "$(QTDIR)\bin\QtOpenGLd4.dll" "$(SolutionDir)bin\" /Y</Command>
       <Optimization>MaxSpeed</Optimization>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <CompileAsManaged>false</CompileAsManaged>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(QTDIR)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>

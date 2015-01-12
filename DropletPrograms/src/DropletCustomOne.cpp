@@ -18,6 +18,11 @@ void DropletCustomOne::DropletInit()
 
 void DropletCustomOne::DropletMainLoop()
 {
+
+	if (!is_moving(NULL))
+	{
+		move_steps(rand_byte() % 8, (rand_byte() % 128) * 20);
+	}
 }
 
 void DropletCustomOne::get_color_from_id(droplet_id_type id, uint8_t* r, uint8_t* g, uint8_t* b)

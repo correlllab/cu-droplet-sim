@@ -1,8 +1,9 @@
 #droplet assets
 droplet_shader droplet
-droplet_projection projdroplet
-droplet_texture dropletTex
-droplet_mesh HQDroplet
+droplet_projection droplet
+droplet_texture dropletlayout
+droplet_mesh dropletTest
+
 
 #wall assets
 wall_shader texture
@@ -11,7 +12,7 @@ wall_mesh cube
 
 #floor assets
 floor_shader texture
-floor_projection projtexture
+floor_projection texture
 floor_texture floor
 floor_mesh cube
 
@@ -22,11 +23,17 @@ tower_mesh IRTower
 
 #object assets
 object_shader texture
-object_projection projtexture
+object_projection texture
 object_texture sphere
 object_mesh sphere
 
 object_cube_shader texture
-object_cube_projection projtexture
+object_cube_projection texture
 object_cube_texture cube
 object_cube_mesh cube
+
+quad_shader quad
+glow_shader glow
+proj_shader proj
+blur_shader blur
+combo_shader combo

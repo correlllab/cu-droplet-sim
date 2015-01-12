@@ -3,7 +3,7 @@
  *
  * \brief	Implements the AssetManager class.
  */
-
+#include <iostream>
 #include "assetmanager.h"
 
 AssetManager::AssetManager()
@@ -91,6 +91,8 @@ void AssetManager::setShaderManifest(QString file)
 }
 void AssetManager::loadShaders()
 {
+	std::cout<<"loadShaders"<<std::endl;
+
 	qDebug() << "Loading Shaders...";
 	QString shaderDir(_assetDir);
 
@@ -114,17 +116,24 @@ void AssetManager::loadShaders()
 				{
 					if (!line.startsWith("#"))
 					{
+						std::cout<<"\tline = "<<line.toStdString()<<std::endl;
+
 						QStringList list = line.split(" ",QString::SkipEmptyParts);
 						if (list.size() == 3)
 						{
+							std::cout<<"\t\tpassed size test"<<std::endl;
 							QGLShaderProgram *prog = new QGLShaderProgram();
 
 							if (prog->addShaderFromSourceFile(QGLShader::Vertex,QString(shaderDir).append(list[1])))
 							{
+								std::cout<<"\t\tpassed add vertex file"<<std::endl;
 								if (prog->addShaderFromSourceFile(QGLShader::Fragment,QString(shaderDir).append(list[2])))
 								{
+									std::cout<<"\t\tpassed add frag file"<<std::endl;
 									if(prog->link())
 									{
+										std::cout<<"\t\tlinked: "<<list[0].toStdString()<<std::endl;
+
 										qDebug() << "Linked program " << list[0];
 										_shaders[list[0].toLower()] = prog;
 										_unused = false;
@@ -306,6 +315,8 @@ void AssetManager::reloadAssets()
 
 void AssetManager::loadManifest()
 {
+	std::cout<<"loadManifest..."<<std::endl;
+
 	qDebug() << "Loading asset names...";
 	QString manifestPath(_assetDir) ;
 	manifestPath.append(_assetManifest);
@@ -331,6 +342,7 @@ void AssetManager::loadManifest()
 						{
 							if (!_manifest.contains(list[0]))
 							{
+								std::cout<<"\tmanifest line = "<<list[1].toStdString()<<std::endl;
 								_manifest[list[0]] = list[1];
 							} else {
 								qDebug() << "Error: namespace collision on manifest item" << list[0];

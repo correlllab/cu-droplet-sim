@@ -3,6 +3,7 @@
  *
  * \brief	Implements the TextureManager class.
  */
+#include <iostream>
 
 #include "texturemanager.h"
 
@@ -56,6 +57,7 @@ bool TextureManager::loadFile(QString fileName)
 		_textureInfo.height = image.height();
 
 		glGenTextures(1,&_textureInfo.handle);
+		std::cout<<"TextureManager.loadFile"<<fileName.toStdString()<<", handle = "<<_textureInfo.handle<<std::endl;
 		glBindTexture(GL_TEXTURE_2D, _textureInfo.handle);
 		glTexImage2D(GL_TEXTURE_2D, 0, 4, _textureInfo.width, _textureInfo.height, 0,  GL_RGBA, GL_UNSIGNED_BYTE, image.bits());
 		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR); // Linear Filtering

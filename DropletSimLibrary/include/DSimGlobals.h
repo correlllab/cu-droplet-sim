@@ -69,7 +69,7 @@ typedef uint8_t move_direction;
  * \brief	droplet ID types.
  *
  */
-#define DROPLET_ID_START		100 // Droplet ids will start incrementing from this number
+#define DROPLET_ID_START		1 // Droplet ids will start incrementing from this number
 typedef uint16_t droplet_id_type;
 
 #define BANDS_PER_TILE 11.f

@@ -1,0 +1,6 @@
+col_tiles 4
+row_tiles 4
+
+droplets customone 0 0
+droplets customone 4 0
+droplets customone 0 4
