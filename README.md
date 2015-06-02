@@ -1,6 +1,6 @@
 cu-droplet
 ==========
-
+ 
 Droplets: The Correll Lab Swarm Robotics Platform
 
 <blink>Please help us to make a 1000 droplets by supporting and sharing our <a href="http://www.colorado.edu/crowdfunding/?cfpage=project&project_id=10341">crowdfunding campaign</a>.</blink>
